@@ -602,10 +602,6 @@ def _find_band(self, hz):
     else:
         B = BANDS
 
-    # currently the hacked firmware sets band=1 below 50MHz
-    if self.FIRMWARE_NOLIMITS and mhz < 50.0:
-        return 1
-
     for a in B:
         if mhz >= B[a][0] and mhz <= B[a][1]:
             return a
