@@ -1,4 +1,878 @@
+# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
+# Adapted For UV-K5 EGZUMER custom software By Jocelyn Maheu
+#
+# based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
+#
+#
+# This is a preliminary version of a driver for the UV-K5
+# It is based on my reverse engineering effort described here:
+# https://github.com/sq5bpf/uvk5-reverse-engineering
+#
+# Warning: this driver is experimental, it may brick your radio,
+# eat your lunch and mess up your configuration.
+#
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+import struct
+import logging
+
+# for adding messagebox.. but not working 
+# from chirp.wxui import main
+# the code 
+# wx.MessageBox(warning, "put your message here.." , wx.OK )
+                
+                
+from chirp import chirp_common, directory, bitwise, memmap, errors, util
+from chirp.settings import RadioSetting, RadioSettingGroup, \
+    RadioSettingValueBoolean, RadioSettingValueList, \
+    RadioSettingValueInteger, RadioSettingValueString, \
+    RadioSettings
+
+LOG = logging.getLogger(__name__)
+
+# Show the obfuscated version of commands. Not needed normally, but
+# might be useful for someone who is debugging a similar radio
+DEBUG_SHOW_OBFUSCATED_COMMANDS = False
+
+# Show the memory being written/received. Not needed normally, because
+# this is the same information as in the packet hexdumps, but
+# might be useful for someone debugging some obscure memory issue
+DEBUG_SHOW_MEMORY_ACTIONS = False
+
+# TODO: remove the driver version when it's in mainline chirp
+DRIVER_VERSION = "Quansheng UV-K5 driver v20230626 (c) Jacek Lipkowski SQ5BPF"
+VALEUR_COMPILER = "ENABLE"
+
+MEM_FORMAT = """
+#seekto 0x0000;
+struct {
+  ul32 freq;
+  ul32 offset;
+  u8 rxcode;
+  u8 txcode;
+
+  u8 unknown1:2,
+  txcodeflag:2,
+  unknown2:2,
+  rxcodeflag:2;
+
+  //u8 flags1;
+  u8 flags1_unknown7:1,
+  flags1_unknown6:1,
+  flags1_unknown5:1,
+  enable_am:1,
+  flags1_unknown3:1,
+  is_in_scanlist:1,
+  shift:2;
+
+  //u8 flags2;
+  u8 flags2_unknown7:1,
+  flags2_unknown6:1,
+  flags2_unknown5:1,
+  bclo:1,
+  txpower:2,
+  bandwidth:1,
+  freq_reverse:1;
+
+  //u8 dtmf_flags;
+  u8 dtmf_flags_unknown7:1,
+  dtmf_flags_unknown6:1,
+  dtmf_flags_unknown5:1,
+  dtmf_flags_unknown4:1,
+  dtmf_flags_unknown3:1,
+  dtmf_pttid:2,
+  dtmf_decode:1;
+
+
+  u8 step;
+  u8 scrambler;
+} channel[214];
+
+#seekto 0xd60;
+struct {
+u8 is_scanlist1:1,
+is_scanlist2:1,
+unknown1:1,
+unknown2:1,
+is_free:1,
+band:3;
+} channel_attributes[200];
+
+#seekto 0xe40;
+ul16 fmfreq[20];
+
+#seekto 0xe70;
+u8 call_channel;
+u8 squelch;
+u8 max_talk_time;
+u8 noaa_autoscan;
+u8 key_lock;
+u8 vox_switch;
+u8 vox_level;
+u8 mic_gain;
+
+struct {
+  u8 backlight_max:4,
+  backlight_min:4;
+  } backlight;
+u8 channel_display_mode;
+u8 crossband;
+u8 battery_save;
+u8 dual_watch;
+u8 backlight_auto_mode;
+u8 tail_note_elimination;
+u8 vfo_open;
+
+#seekto 0xe90;
+struct {
+  u8 beep_control:1,
+  keyM_longpress_action:7;
+  } beep_keyM;
+u8 key1_shortpress_action;
+u8 key1_longpress_action;
+u8 key2_shortpress_action;
+u8 key2_longpress_action;
+u8 scan_resume_mode;
+u8 auto_keypad_lock;
+u8 power_on_dispmode;
+u8 password[4];
+
+#seekto 0xea0;
+u8 keypad_tone;
+u8 S0_S_meter_level_dbm;
+u8 S9_S_meter_level_dbm;
+
+#seekto 0xea8;
+u8 alarm_mode;
+u8 reminding_of_end_talk_ROGER;
+u8 repeater_tail_elimination;
+u8 TX_VFO;
+u8 Battery_type;
+
+#seekto 0xeb0;
+char logo_line1[16];
+char logo_line2[16];
+
+#seekto 0xed0;
+struct {
+u8 side_tone;
+char separate_code;
+char group_call_code;
+u8 decode_response;
+u8 auto_reset_time;
+u8 preload_time;
+u8 first_code_persist_time;
+u8 hash_persist_time;
+u8 code_persist_time;
+u8 code_interval_time;
+u8 permit_remote_kill;
+} dtmf_settings;
+
+#seekto 0xee0;
+struct {
+char dtmf_local_code[3];
+char unused1[5];
+char kill_code[5];
+char unused2[3];
+char revive_code[5];
+char unused3[3];
+char dtmf_up_code[16];
+char dtmf_down_code[16];
+} dtmf_settings_numbers;
+
+#seekto 0xf18;
+u8 scanlist_default;
+u8 scanlist1_priority_scan;
+u8 scanlist1_priority_ch1;
+u8 scanlist1_priority_ch2;
+u8 scanlist2_priority_scan;
+u8 scanlist2_priority_ch1;
+u8 scanlist2_priority_ch2;
+u8 scanlist_unknown_0xff;
+
+
+#seekto 0xf40;
+u8 int_flock;
+u8 int_350tx;
+u8 int_KILLED;
+u8 int_200tx;
+u8 int_500tx;
+u8 int_350en;
+u8 int_scren;
+
+struct {
+u8 unknown:1,
+    Setting_live_DTMF_decoder:1,
+    Setting_battery_text:2,
+    Setting_mic_bar:1,
+    Setting_AM_fix:1,
+    Setting_backlight_on_TX_RX:2;
+  } Multi_option;
+#seekto 0xf50;
+struct {
+char name[16];
+} channelname[200];
+
+#seekto 0x1c00;
+struct {
+char name[8];
+char number[3];
+char unused_00[5];
+} dtmfcontact[16];
+#seekto 0x1FF0;
+struct {
+u8 ENABLE_FMRADIO:1, 
+   ENABLE_NOAA:1, 
+   ENABLE_VOICE:1, 
+   ENABLE_VOX:1, 
+   ENABLE_ALARM:1, 
+   ENABLE_TX1750:1,
+   ENABLE_PWRON_PASSWORD:1, 
+   ENABLE_DTMF_CALLING:1; 
+} Compiler_Option_1;
+
+#seekto 0x1FF1;
+struct {
+u8 ENABLE_FLASHLIGHT:1, 
+   ENABLE_WIDE_RX:1, 
+   ENABLE_BYP_RAW_DEMODULATORS:1, 
+   ENABLE_BLMIN_TMP_OFF:1, 
+   COMPILER_OPTION2_5:1, 
+   COMPILER_OPTION2_6:1, 
+   COMPILER_OPTION2_7:1, 
+   COMPILER_OPTION2_8:1; 
+} Compiler_Option_2;
+"""
+# bits that we will save from the channel structure (mostly unknown)
+SAVE_MASK_0A = 0b11001100
+SAVE_MASK_0B = 0b11101100
+SAVE_MASK_0C = 0b11100000
+SAVE_MASK_0D = 0b11111000
+SAVE_MASK_0E = 0b11110001
+SAVE_MASK_0F = 0b11110000
+
+# flags1
+FLAGS1_OFFSET_NONE = 0b00
+FLAGS1_OFFSET_MINUS = 0b10
+FLAGS1_OFFSET_PLUS = 0b01
+
+POWER_HIGH = 0b10
+POWER_MEDIUM = 0b01
+POWER_LOW = 0b00
+
+# dtmf_flags
+PTTID_LIST = ["OFF", "UP CODE", "DOWN CODE", "UP+DOWN CODE", "APOLLO QUINDAR"]
+
+# power
+UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
+                     chirp_common.PowerLevel("Med",  watts=3.00),
+                     chirp_common.PowerLevel("High", watts=5.00),
+                     ]
+
+# scrambler
+SCRAMBLER_LIST = ["off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+
+# rx mode
+RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"] 
+# channel display mode
+CHANNELDISP_LIST = ["Freq", "Channel Number", "Name", "Name + Freq"] #joc modif to fit more with radio display
+
+# battery save
+BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
+
+# battery type
+BATTYPE_LIST = ["1600_mAh", "2200_mAh"]
+# bat txt
+BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
+# Backlight auto mode
+BACKLIGHT_LIST = ["Off", "5s", "10s", "20s", "1min", "2min", "4min", "Always On"]
+
+# Backlight _TX_RX_LIST
+BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
+# Crossband receiving/transmitting
+CROSSBAND_LIST = ["Off", "Band A", "Band B"]
+DUALWATCH_LIST = CROSSBAND_LIST
+
+# steps
+STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25, 15, 30, 50, 100, 125, 250, 500]
+
+# ctcss/dcs codes
+TMODES = ["", "Tone", "DTCS", "DTCS"]
+TONE_NONE = 0
+TONE_CTCSS = 1
+TONE_DCS = 2
+TONE_RDCS = 3
+
+
+CTCSS_TONES = [
+    67.0, 69.3, 71.9, 74.4, 77.0, 79.7, 82.5, 85.4,
+    88.5, 91.5, 94.8, 97.4, 100.0, 103.5, 107.2, 110.9,
+    114.8, 118.8, 123.0, 127.3, 131.8, 136.5, 141.3, 146.2,
+    151.4, 156.7, 159.8, 162.2, 165.5, 167.9, 171.3, 173.8,
+    177.3, 179.9, 183.5, 186.2, 189.9, 192.8, 196.6, 199.5,
+    203.5, 206.5, 210.7, 218.1, 225.7, 229.1, 233.6, 241.8,
+    250.3, 254.1
+]
+
+# lifted from ft4.py
+DTCS_CODES = [
+    23,  25,  26,  31,  32,  36,  43,  47,  51,  53,  54,
+    65,  71,  72,  73,  74,  114, 115, 116, 122, 125, 131,
+    132, 134, 143, 145, 152, 155, 156, 162, 165, 172, 174,
+    205, 212, 223, 225, 226, 243, 244, 245, 246, 251, 252,
+    255, 261, 263, 265, 266, 271, 274, 306, 311, 315, 325,
+    331, 332, 343, 346, 351, 356, 364, 365, 371, 411, 412,
+    413, 423, 431, 432, 445, 446, 452, 454, 455, 462, 464,
+    465, 466, 503, 506, 516, 523, 526, 532, 546, 565, 606,
+    612, 624, 627, 631, 632, 654, 662, 664, 703, 712, 723,
+    731, 732, 734, 743, 754
+]
+
+# flock list extended 
+FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "ALL (Special Manipulation Needed)", "NONE"] #joc: add extra parameter 
+
+SCANRESUME_LIST = ["TO: Resume after 5 seconds",
+                   "CO: Resume after signal dissapears",
+                   "SE: Stop scanning after receiving a signal"]
+WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"] #joc: add "None"
+KEYPADTONE_LIST = ["Off", "Chinese", "English"]
+
+ALARMMODE_LIST = ["SITE", "TONE"]
+REMENDOFTALK_LIST = ["Off", "ROGER", "MDC"]
+RTE_LIST = ["Off", "100ms", "200ms", "300ms", "400ms",
+            "500ms", "600ms", "700ms", "800ms", "900ms"]
+
+MEM_SIZE = 0x2000  # size of all memory
+PROG_SIZE = 0x1d00  # size of the memory that we will write
+MEM_BLOCK = 0x80  # largest block of memory that we can reliably write
+
+# fm radio supported frequencies
+FMMIN = 76.0
+FMMAX = 108.0
+
+# bands supported by the UV-K5
+BANDS = {
+        0: [18.0, 76.0],
+        1: [108.0, 135.9999],
+        2: [136.0, 199.9990],
+        3: [200.0, 299.9999],
+        4: [350.0, 399.9999],
+        5: [400.0, 469.9999],
+        6: [470.0, 1300.0]
+        }
+
+SPECIALS = {
+        "F1(50M-76M)A": 200,
+        "F1(50M-76M)B": 201,
+        "F2(108M-136M)A": 202,
+        "F2(108M-136M)B": 203,
+        "F3(136M-174M)A": 204,
+        "F3(136M-174M)B": 205,
+        "F4(174M-350M)A": 206,
+        "F4(174M-350M)B": 207,
+        "F5(350M-400M)A": 208,
+        "F5(350M-400M)B": 209,
+        "F6(400M-470M)A": 210,
+        "F6(400M-470M)B": 211,
+        "F7(470M-600M)A": 212,
+        "F7(470M-600M)B": 213
+        }
+
+VFO_CHANNEL_NAMES = ["F1(50M-76M)A", "F1(50M-76M)B",
+                     "F2(108M-136M)A", "F2(108M-136M)B",
+                     "F3(136M-174M)A", "F3(136M-174M)B",
+                     "F4(174M-350M)A", "F4(174M-350M)B",
+                     "F5(350M-400M)A", "F5(350M-400M)B",
+                     "F6(400M-470M)A", "F6(400M-470M)B",
+                     "F7(470M-600M)A", "F7(470M-600M)B"]
+
+SCANLIST_LIST = ["None", "1", "2", "1+2"]
+
+DTMF_CHARS = "0123456789ABCD*# "
+DTMF_CHARS_ID = "0123456789ABCDabcd"
+DTMF_CHARS_KILL = "0123456789ABCDabcd"
+DTMF_CHARS_UPDOWN = "0123456789ABCDabcd#* "
+DTMF_CODE_CHARS = "ABCD*# "
+DTMF_DECODE_RESPONSE_LIST = ["None", "Ring", "Reply", "Both"]
+
+KEYACTIONS_LIST = ["None", "Flashlight", "Power", "Monitor", "Scan", 
+                   "VOX", "*Alarm ", "FM radio", "*Transmit 1750Hz",
+                   "Lock Keypad", "Switch VFO", "VFO/MR", "Switch Demodul"]
+
+# the communication is obfuscated using this fine mechanism
+def xorarr(data: bytes):
+    tbl = [22, 108, 20, 230, 46, 145, 13, 64, 33, 53, 213, 64, 19, 3, 233, 128]
+    x = b""
+    r = 0
+    for byte in data:
+        x += bytes([byte ^ tbl[r]])
+        r = (r+1) % len(tbl)
+    return x
+
+
+# if this crc was used for communication to AND from the radio, then it
+# would be a measure to increase reliability.
+# but it's only used towards the radio, so it's for further obfuscation
+def calculate_crc16_xmodem(data: bytes):
+    poly = 0x1021
+    crc = 0x0
+    for byte in data:
+        crc = crc ^ (byte << 8)
+        for i in range(8):
+            crc = crc << 1
+            if (crc & 0x10000):
+                crc = (crc ^ poly) & 0xFFFF
+    return crc & 0xFFFF
+
+
+def _send_command(serport, data: bytes):
+    """Send a command to UV-K5 radio"""
+    LOG.debug("Sending command (unobfuscated) len=0x%4.4x:\n%s" %
+              (len(data), util.hexprint(data)))
+
+    crc = calculate_crc16_xmodem(data)
+    data2 = data + struct.pack("<H", crc)
+
+    command = struct.pack(">HBB", 0xabcd, len(data), 0) + \
+        xorarr(data2) + \
+        struct.pack(">H", 0xdcba)
+    if DEBUG_SHOW_OBFUSCATED_COMMANDS:
+        LOG.debug("Sending command (obfuscated):\n%s" % util.hexprint(command))
+    try:
+        result = serport.write(command)
+    except Exception:
+        raise errors.RadioError("Error writing data to radio")
+    return result
+
+
+def _receive_reply(serport):
+    header = serport.read(4)
+    if len(header) != 4:
+        LOG.warning("Header short read: [%s] len=%i" %
+                    (util.hexprint(header), len(header)))
+        raise errors.RadioError("Header short read")
+    if header[0] != 0xAB or header[1] != 0xCD or header[3] != 0x00:
+        LOG.warning("Bad response header: %s len=%i" %
+                    (util.hexprint(header), len(header)))
+        raise errors.RadioError("Bad response header")
+
+    cmd = serport.read(int(header[2]))
+    if len(cmd) != int(header[2]):
+        LOG.warning("Body short read: [%s] len=%i" %
+                    (util.hexprint(cmd), len(cmd)))
+        raise errors.RadioError("Command body short read")
+
+    footer = serport.read(4)
+
+    if len(footer) != 4:
+        LOG.warning("Footer short read: [%s] len=%i" %
+                    (util.hexprint(footer), len(footer)))
+        raise errors.RadioError("Footer short read")
+
+    if footer[2] != 0xDC or footer[3] != 0xBA:
+        LOG.debug(
+                "Reply before bad response footer (obfuscated)"
+                "len=0x%4.4x:\n%s" % (len(cmd), util.hexprint(cmd)))
+        LOG.warning("Bad response footer: %s len=%i" %
+                    (util.hexprint(footer), len(footer)))
+        raise errors.RadioError("Bad response footer")
+
+    if DEBUG_SHOW_OBFUSCATED_COMMANDS:
+        LOG.debug("Received reply (obfuscated) len=0x%4.4x:\n%s" %
+                  (len(cmd), util.hexprint(cmd)))
+
+    cmd2 = xorarr(cmd)
+
+    LOG.debug("Received reply (unobfuscated) len=0x%4.4x:\n%s" %
+              (len(cmd2), util.hexprint(cmd2)))
+
+    return cmd2
+
+
+def _getstring(data: bytes, begin, maxlen):
+    tmplen = min(maxlen+1, len(data))
+    s = [data[i] for i in range(begin, tmplen)]
+    for key, val in enumerate(s):
+        if val < ord(' ') or val > ord('~'):
+            break
+    return ''.join(chr(x) for x in s[0:key])
+
+
+def _sayhello(serport):
+    hellopacket = b"\x14\x05\x04\x00\x6a\x39\x57\x64"
+
+    tries = 5
+    while True:
+        LOG.debug("Sending hello packet")
+        _send_command(serport, hellopacket)
+        o = _receive_reply(serport)
+        if (o):
+            break
+        tries -= 1
+        if tries == 0:
+            LOG.warning("Failed to initialise radio")
+            raise errors.RadioError("Failed to initialize radio")
+    firmware = _getstring(o, 4, 24)
+
+    LOG.info("Found firmware: %s" % firmware)
+    return firmware
+
+
+def _readmem(serport, offset, length):
+    LOG.debug("Sending readmem offset=0x%4.4x len=0x%4.4x" % (offset, length))
+
+    readmem = b"\x1b\x05\x08\x00" + \
+        struct.pack("<HBB", offset, length, 0) + \
+        b"\x6a\x39\x57\x64"
+    _send_command(serport, readmem)
+    o = _receive_reply(serport)
+    if DEBUG_SHOW_MEMORY_ACTIONS:
+        LOG.debug("readmem Received data len=0x%4.4x:\n%s" %
+                  (len(o), util.hexprint(o)))
+    return o[8:]
+
+
+def _writemem(serport, data, offset):
+    LOG.debug("Sending writemem offset=0x%4.4x len=0x%4.4x" %
+              (offset, len(data)))
+
+    if DEBUG_SHOW_MEMORY_ACTIONS:
+        LOG.debug("writemem sent data offset=0x%4.4x len=0x%4.4x:\n%s" %
+                  (offset, len(data), util.hexprint(data)))
+
+    dlen = len(data)
+    writemem = b"\x1d\x05" + \
+        struct.pack("<BBHBB", dlen+8, 0, offset, dlen, 1) + \
+        b"\x6a\x39\x57\x64"+data
+
+    _send_command(serport, writemem)
+    o = _receive_reply(serport)
+
+    LOG.debug("writemem Received data: %s len=%i" % (util.hexprint(o), len(o)))
+
+    if (o[0] == 0x1e
+            and
+            o[4] == (offset & 0xff)
+            and
+            o[5] == (offset >> 8) & 0xff):
+        return True
+    else:
+        LOG.warning("Bad data from writemem")
+        raise errors.RadioError("Bad response to writemem")
+
+
+def _resetradio(serport):
+    resetpacket = b"\xdd\x05\x00\x00"
+    _send_command(serport, resetpacket)
+
+
+def do_download(radio):
+    serport = radio.pipe
+    serport.timeout = 0.5
+    status = chirp_common.Status()
+    status.cur = 0
+    status.max = MEM_SIZE
+    status.msg = "Downloading from radio"
+    radio.status_fn(status)
+
+    eeprom = b""
+    f = _sayhello(serport)
+    if f:
+        radio.FIRMWARE_VERSION = f
+    else:
+        return False
+
+    addr = 0
+    while addr < MEM_SIZE:
+        o = _readmem(serport, addr, MEM_BLOCK)
+        status.cur = addr
+        radio.status_fn(status)
+
+        if o and len(o) == MEM_BLOCK:
+            eeprom += o
+            addr += MEM_BLOCK
+        else:
+            raise errors.RadioError("Memory download incomplete")
+
+    return memmap.MemoryMapBytes(eeprom)
+
+
+def do_upload(radio):
+    serport = radio.pipe
+    serport.timeout = 0.5
+    status = chirp_common.Status()
+    status.cur = 0
+    status.max = PROG_SIZE
+    status.msg = "Uploading to radio"
+    radio.status_fn(status)
+
+    f = _sayhello(serport)
+    if f:
+        radio.FIRMWARE_VERSION = f
+    else:
+        return False
+
+    addr = 0
+    while addr < PROG_SIZE:
+        o = radio.get_mmap()[addr:addr+MEM_BLOCK]
+        _writemem(serport, o, addr)
+        status.cur = addr
+        radio.status_fn(status)
+        if o:
+            addr += MEM_BLOCK
+        else:
+            raise errors.RadioError("Memory upload incomplete")
+    status.msg = "Uploaded OK"
+
+    _resetradio(serport)
+
+    return True
+
+
+def _find_band(self, hz):
+    mhz = hz/1000000.0
+    for a in BANDS:
+        if mhz >= BANDS[a][0] and mhz <= BANDS[a][1]:
+            return a
+    return False
+
+
+@directory.register
+class UVK5Radio(chirp_common.CloneModeRadio):
+    """Quansheng UV-K5"""
+    VENDOR = "Quansheng"
+    MODEL = "UV-K5 (egzumer)"
+    BAUD_RATE = 38400
+    NEEDS_COMPAT_SERIAL = False
+    FIRMWARE_VERSION = ""
+
+    def get_prompts(x=None):
+        rp = chirp_common.RadioPrompts()
+        rp.experimental = \
+            ('This is an experimental driver for the Quansheng UV-K5. '
+             'It may harm your radio, or worse. Use at your own risk.\n\n'
+             'Before attempting to do any changes please download'
+             'the memory image from the radio with chirp '
+             'and keep it. This can be later used to recover the '
+             'original settings. \n\n'
+             'some details are not yet implemented')
+        rp.pre_download = _(
+            "1. Turn radio on.\n"
+            "2. Connect cable to mic/spkr connector.\n"
+            "3. Make sure connector is firmly connected.\n"
+            "4. Click OK to download image from device.\n\n"
+            "It will may not work if you turn on the radio "
+            "with the cable already attached\n")
+        rp.pre_upload = _(
+            "1. Turn radio on.\n"
+            "2. Connect cable to mic/spkr connector.\n"
+            "3. Make sure connector is firmly connected.\n"
+            "4. Click OK to upload the image to device.\n\n"
+            "It will may not work if you turn on the radio "
+            "with the cable already attached")
+        return rp
+
+    # Return information about this radio's features, including
+    # how many memories it has, what bands it supports, etc
+    def get_features(self):
+        rf = chirp_common.RadioFeatures()
+        rf.has_bank = False
+        rf.valid_dtcs_codes = DTCS_CODES
+        rf.has_rx_dtcs = True
+        rf.has_ctone = True
+        rf.has_settings = True
+        rf.has_comment = False
+        rf.valid_name_length = 10
+        rf.valid_power_levels = UVK5_POWER_LEVELS
+        rf.valid_special_chans = list(SPECIALS.keys())
+
+        # hack so we can input any frequency,
+        # the 0.1 and 0.01 steps don't work unfortunately
+        rf.valid_tuning_steps = [0.01, 0.1, 1.0] + STEPS
+
+        rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
+        rf.valid_cross_modes = ["Tone->Tone", "Tone->DTCS", "DTCS->Tone",
+                                "->Tone", "->DTCS", "DTCS->", "DTCS->DTCS"]
+
+        rf.valid_characters = chirp_common.CHARSET_ASCII
+        rf.valid_modes = ["FM", "NFM", "AM", "NAM", "USB", "NUSB"]
+        rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
+
+        rf.valid_skips = [""]
+
+        # This radio supports memories 1-200, 201-214 are the VFO memories
+        rf.memory_bounds = (1, 200)
+
+        # This is what the BK4819 chip supports
+        # Will leave it in a comment, might be useful someday
+        # rf.valid_bands = [(18000000,  620000000),
+        #                  (840000000, 1300000000)
+        #                  ]
+        rf.valid_bands = []
+        for a in BANDS:
+            rf.valid_bands.append(
+                    (int(BANDS[a][0]*1000000), int(BANDS[a][1]*1000000)))
+        return rf
+
+    # Do a download of the radio from the serial port
+    def sync_in(self):
+        self._mmap = do_download(self)
+        self.process_mmap()
+
+    # Do an upload of the radio to the serial port
+    def sync_out(self):
+        do_upload(self)
+
+    # Convert the raw byte array into a memory object structure
+    def process_mmap(self):
+        self._memobj = bitwise.parse(MEM_FORMAT, self._mmap)
+
+    # Return a raw representation of the memory object, which
+    # is very helpful for development
+    def get_raw_memory(self, number):
+        return repr(self._memobj.channel[number-1])
+
+    def validate_memory(self, mem):
+        msgs = super().validate_memory(mem)
+
+        # find tx frequency
+        if mem.duplex == '-':
+            txfreq = mem.freq - mem.offset
+        elif mem.duplex == '+':
+            txfreq = mem.freq + mem.offset
+        else:
+            txfreq = mem.freq
+
+        # find band
+        band = _find_band(self, txfreq)
+        if band is False:
+            msg = "Transmit frequency %.4fMHz is not supported by this radio" \
+                   % (txfreq/1000000.0)
+            msgs.append(chirp_common.ValidationWarning(msg))
+
+        band = _find_band(self, mem.freq)
+        if band is False:
+            msg = "The frequency %.4fMHz is not supported by this radio" \
+                   % (mem.freq/1000000.0)
+            msgs.append(chirp_common.ValidationWarning(msg))
+
+        return msgs
+
+    def _set_tone(self, mem, _mem):
+        ((txmode, txtone, txpol),
+         (rxmode, rxtone, rxpol)) = chirp_common.split_tone_encode(mem)
+
+        if txmode == "Tone":
+            txtoval = CTCSS_TONES.index(txtone)
+            txmoval = 0b01
+        elif txmode == "DTCS":
+            txmoval = txpol == "R" and 0b11 or 0b10
+            txtoval = DTCS_CODES.index(txtone)
+        else:
+            txmoval = 0
+            txtoval = 0
+
+        if rxmode == "Tone":
+            rxtoval = CTCSS_TONES.index(rxtone)
+            rxmoval = 0b01
+        elif rxmode == "DTCS":
+            rxmoval = rxpol == "R" and 0b11 or 0b10
+            rxtoval = DTCS_CODES.index(rxtone)
+        else:
+            rxmoval = 0
+            rxtoval = 0
+
+        _mem.rxcodeflag = rxmoval
+        _mem.txcodeflag = txmoval
+        _mem.unknown1 = 0
+        _mem.unknown2 = 0
+        _mem.rxcode = rxtoval
+        _mem.txcode = txtoval
+
+    def _get_tone(self, mem, _mem):
+        rxtype = _mem.rxcodeflag
+        txtype = _mem.txcodeflag
+        rx_tmode = TMODES[rxtype]
+        tx_tmode = TMODES[txtype]
+
+        rx_tone = tx_tone = None
+
+        if tx_tmode == "Tone":
+            if _mem.txcode < len(CTCSS_TONES):
+                tx_tone = CTCSS_TONES[_mem.txcode]
+            else:
+                tx_tone = 0
+                tx_tmode = ""
+        elif tx_tmode == "DTCS":
+            if _mem.txcode < len(DTCS_CODES):
+                tx_tone = DTCS_CODES[_mem.txcode]
+            else:
+                tx_tone = 0
+                tx_tmode = ""
+
+        if rx_tmode == "Tone":
+            if _mem.rxcode < len(CTCSS_TONES):
+                rx_tone = CTCSS_TONES[_mem.rxcode]
+            else:
+                rx_tone = 0
+                rx_tmode = ""
+        elif rx_tmode == "DTCS":
+            if _mem.rxcode < len(DTCS_CODES):
+                rx_tone = DTCS_CODES[_mem.rxcode]
+            else:
+                rx_tone = 0
+                rx_tmode = ""
+
+        tx_pol = txtype == 0x03 and "R" or "N"
+        rx_pol = rxtype == 0x03 and "R" or "N"
+
+        chirp_common.split_tone_decode(mem, (tx_tmode, tx_tone, tx_pol),
+                                       (rx_tmode, rx_tone, rx_pol))
+
+    # Extract a high-level memory object from the low-level memory map
+    # This is called to populate a memory in the UI
+    def get_memory(self, number2):
+
+        mem = chirp_common.Memory()
+
+        if isinstance(number2, str):
+            number = SPECIALS[number2]
+            mem.extd_number = number2
+        else:
+            number = number2 - 1
+
+        mem.number = number + 1
+
+        _mem = self._memobj.channel[number]
+
+        tmpcomment = ""
+
+        is_empty = False
+        # We'll consider any blank (i.e. 0MHz frequency) to be empty
+        if (_mem.freq == 0xffffffff) or (_mem.freq == 0):
+            is_empty = True
+
+        tmpscn = SCANLIST_LIST[0]
+
+        # We'll also look at the channel attributes if a memory has them
+        if number < 200:
+            _mem3 = self._memobj.channel_attributes[number]
+            # free memory bit
+            if _mem3.is_free > 0:
+                is_empty = True
             # scanlists
             if _mem3.is_scanlist1 > 0 and _mem3.is_scanlist2 > 0:
                 tmpscn = SCANLIST_LIST[3]  # "1+2"
@@ -188,7 +1062,7 @@
             # Crossband receiving/transmitting
             if element.get_name() == "crossband":
                 _mem.crossband = CROSSBAND_LIST.index(str(element.value))
-
+                              
             # Battery Save
             if element.get_name() == "battery_save":
                 _mem.battery_save = BATSAVE_LIST.index(str(element.value))
@@ -196,11 +1070,43 @@
             if element.get_name() == "dualwatch":
                 _mem.dual_watch = DUALWATCH_LIST.index(str(element.value))
 
+            # RX_MODE
+            if element.get_name() == "RXMODE":
+                tmprxmode = RXMODE_LIST.index(str(element.value))
+
             # Backlight auto mode
             if element.get_name() == "backlight_auto_mode":
                 _mem.backlight_auto_mode = \
                         BACKLIGHT_LIST.index(str(element.value))
 
+            # Backlight min
+            if element.get_name() == "backlight.backlight_min":
+                _mem.backlight.backlight_min = \
+                        BACKLIGHT_LIST.index(str(element.value))
+
+            # Backlight max
+            if element.get_name() == "backlight.backlight_max":
+                _mem.backlight.backlight_max = \
+                        BACKLIGHT_LIST.index(str(element.value))
+
+            # Backlight TX_RX
+            if element.get_name() == "Multi_option.Setting_backlight_on_TX_RX":
+                _mem.Multi_option.Setting_backlight_on_TX_RX = \
+                        BACKLIGHT_TX_RX_LIST.index(str(element.value))  
+                       
+            # AM_fix
+            if element.get_name() == "Multi_option.Setting_AM_fix":
+                _mem.Multi_option.Setting_AM_fix = element.value and 1 or 0
+                                          
+            # mic_bar
+            if element.get_name() == "mem.Multi_option.Setting_mic_bar":
+                _mem.Multi_option.Setting_mic_bar = element.value and 1 or 0
+                    
+             # Batterie txt
+            if element.get_name() == "_mem.Multi_option.Setting_battery_text":
+                _mem.Multi_option.Setting_battery_text = \
+                        BAT_TXT_LIST.index(str(element.value))  
+                            
             # Tail tone elimination
             if element.get_name() == "tail_note_elimination":
                 _mem.tail_note_elimination = element.value and 1 or 0
@@ -209,9 +1115,9 @@
             if element.get_name() == "vfo_open":
                 _mem.vfo_open = element.value and 1 or 0
 
-            # Beep control
-            if element.get_name() == "beep_control":
-                _mem.beep_control = element.value and 1 or 0
+             # Beep control
+            if element.get_name() == "beep_keyM.beep_control":
+                _mem.beep_keyM.beep_control = element.value and 1 or 0 
 
             # Scan resume mode
             if element.get_name() == "scan_resume_mode":
@@ -234,17 +1140,20 @@
             if element.get_name() == "keypad_tone":
                 _mem.keypad_tone = KEYPADTONE_LIST.index(str(element.value))
 
-            # Language
-            if element.get_name() == "language":
-                _mem.language = LANGUAGE_LIST.index(str(element.value))
+            if element.get_name() == "S0_S_meter_level_dbm":
+                _mem.S0_S_meter_level_dbm = \
+                        int(int(element.value)/10)
 
+            if element.get_name() == "S9_S_meter_level_dbm":
+                _mem.S9_S_meter_level_dbm = \
+                        int(int(element.value)/10)
             # Alarm mode
             if element.get_name() == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
 
             # Reminding of end of talk
-            if element.get_name() == "reminding_of_end_talk":
-                _mem.reminding_of_end_talk = REMENDOFTALK_LIST.index(
+            if element.get_name() == "reminding_of_end_talk_ROGER":
+                _mem.reminding_of_end_talk_ROGER = REMENDOFTALK_LIST.index(
                     str(element.value))
 
             # Repeater tail tone elimination
@@ -265,29 +1174,36 @@
             # unlock settings
 
             # FLOCK
-            if element.get_name() == "flock":
+            if element.get_name() == "int_flock":
                 _mem.int_flock = FLOCK_LIST.index(str(element.value))
 
             # 350TX
-            if element.get_name() == "350tx":
+            if element.get_name() == "int_350tx":
                 _mem.int_350tx = element.value and 1 or 0
 
+            # KILLED
+            if element.get_name() == "int_KILLED":
+                _mem.int_KILLED = element.value and 1 or 0
+
             # 200TX
-            if element.get_name() == "200tx":
+            if element.get_name() == "int_200tx":
                 _mem.int_200tx = element.value and 1 or 0
 
             # 500TX
-            if element.get_name() == "500tx":
+            if element.get_name() == "int_500tx":
                 _mem.int_500tx = element.value and 1 or 0
 
             # 350EN
-            if element.get_name() == "350en":
+            if element.get_name() == "int_350en":
                 _mem.int_350en = element.value and 1 or 0
 
             # SCREN
-            if element.get_name() == "scren":
+            if element.get_name() == "int_scren":
                 _mem.int_scren = element.value and 1 or 0
 
+            # battery type
+            if element.get_name() == "Battery_type":
+                _mem.Battery_type = BATTYPE_LIST.index(str(element.value))
             # fm radio
             for i in range(1, 21):
                 freqname = "FM_" + str(i)
@@ -429,6 +1345,122 @@
             if element.get_name() == "key2_longpress_action":
                 _mem.key2_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
+                      
+            if element.get_name() == "beep_keyM.keyM_longpress_action":
+                _mem.beep_keyM.keyM_longpress_action = KEYACTIONS_LIST.index(
+                        str(element.value))
+                                  
+            # compiler option 1 ENABLE_FMRADIO
+            if element.get_name() == "Compiler_Option_1.ENABLE_FMRADIO":
+                _mem.Compiler_Option_1.ENABLE_FMRADIO = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_FMRADIO == 0:
+                   VALEUR_COMPILER = "DESABLE"
+
+            # compiler option 2 ENABLE_NOAA
+            if element.get_name() == "Compiler_Option_1.ENABLE_NOAA":
+                _mem.Compiler_Option_1.ENABLE_NOAA = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_NOAA == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option 3 ENABLE_VOICE
+            if element.get_name() == "Compiler_Option_1.ENABLE_VOICE":
+                _mem.Compiler_Option_1.ENABLE_VOICE = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_VOICE == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option 4 ENABLE_VOX
+            if element.get_name() == "Compiler_Option_1.ENABLE_VOX":
+                _mem.Compiler_Option_1.ENABLE_VOX = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_VOX == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option 5 ENABLE_ALARM
+            if element.get_name() == "Compiler_Option_1.ENABLE_ALARM":
+                _mem.Compiler_Option_1.ENABLE_ALARM = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_ALARM == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option 6 ENABLE_TX1750
+            if element.get_name() == "Compiler_Option_1.ENABLE_TX1750":
+                _mem.Compiler_Option_1.ENABLE_TX1750 = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_TX1750 == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+ 
+            # compiler option 6 ENABLE_PWRON_PASSWORD
+            if element.get_name() == "Compiler_Option_1.ENABLE_PWRON_PASSWORD":
+                _mem.Compiler_Option_1.ENABLE_PWRON_PASSWORD = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_PWRON_PASSWORD == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+ 
+            # compiler option 7 ENABLE_DTMF_CALLING
+            if element.get_name() == "Compiler_Option_1.ENABLE_DTMF_CALLING":
+                _mem.Compiler_Option_1.ENABLE_DTMF_CALLING = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_1.ENABLE_DTMF_CALLING == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+ 
+            # compiler option2 1 ENABLE_FLASHLIGHT
+            if element.get_name() == "Compiler_Option_2.ENABLE_FLASHLIGHT":
+                _mem.Compiler_Option_2.ENABLE_FLASHLIGHT = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.ENABLE_FLASHLIGHT == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 2 ENABLE_WIDE_RX
+            if element.get_name() == "Compiler_Option_2.ENABLE_WIDE_RX":
+                _mem.Compiler_Option_2.ENABLE_WIDE_RX = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.ENABLE_WIDE_RX == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 3 ENABLE_RAW_DEMODULATORS
+            if element.get_name() == "Compiler_Option_2.ENABLE_RAW_DEMODULATORS":
+                _mem.Compiler_Option_2.ENABLE_RAW_DEMODULATORS = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.ENABLE_RAW_DEMODULATORS == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 4 ENABLE_BLMIN_TMP_OFF
+            if element.get_name() == "Compiler_Option_2.ENABLE_BLMIN_TMP_OFF":
+                _mem.Compiler_Option_2.ENABLE_BLMIN_TMP_OFF = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.ENABLE_BLMIN_TMP_OFF == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 5 COMPILER_OPTION2_5
+            if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_5":
+                _mem.Compiler_Option_2.COMPILER_OPTION2_5 = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.COMPILER_OPTION2_5 == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 6 COMPILER_OPTION2_6
+            if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_6":
+                _mem.Compiler_Option_2.COMPILER_OPTION2_6 = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.COMPILER_OPTION2_6 == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 7 COMPILER_OPTION2_7
+            if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_7":
+                _mem.Compiler_Option_2.COMPILER_OPTION2_7 = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.COMPILER_OPTION2_7 == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
+
+            # compiler option2 8 COMPILER_OPTION2_8
+            if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_8":
+                _mem.Compiler_Option_2.COMPILER_OPTION2_8 = element.value and 1 or 0
+                VALEUR_COMPILER = "ENABLE "
+                if _mem.Compiler_Option_2.COMPILER_OPTION2_8 == 0:
+                   VALEUR_COMPILER = "DESABLE"                 
 
     def get_settings(self):
         _mem = self._memobj
@@ -444,7 +1476,7 @@
 
         top = RadioSettings(
                 basic, keya, dtmf, dtmfc, scanl, unlock, fmradio, roinfo)
-
+           
         # Programmable keys
         tmpval = int(_mem.key1_shortpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
@@ -474,6 +1506,13 @@
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
         rs = RadioSetting("key2_longpress_action", "Side key 2 long press",
+                          RadioSettingValueList(
+                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+        keya.append(rs)
+        tmpval = int(_mem.beep_keyM.keyM_longpress_action)
+        if tmpval >= len(KEYACTIONS_LIST):
+            tmpval = 0
+        rs = RadioSetting("beep_keyM.keyM_longpress_action", "(M) Menu long press ",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -758,7 +1797,7 @@
         # NOAA autoscan
         rs = RadioSetting(
                 "noaa_autoscan",
-                "NOAA Autoscan", RadioSettingValueBoolean(
+                "NOAA Autoscan (* SEE Driver Information if available)", RadioSettingValueBoolean(
                     bool(_mem.noaa_autoscan > 0)))
         basic.append(rs)
 
@@ -802,8 +1841,8 @@
         if tmpcross >= len(CROSSBAND_LIST):
             tmpcross = 0
         rs = RadioSetting(
-                "crossband",
-                "Cross-band receiving/transmitting",
+        	    "crossband",
+                "Cross-band receiving/transmitting, (link with Dual Watch for RXMODE)",
                 RadioSettingValueList(
                     CROSSBAND_LIST,
                     CROSSBAND_LIST[tmpcross]))
@@ -825,9 +1864,42 @@
         tmpdual = _mem.dual_watch
         if tmpdual >= len(DUALWATCH_LIST):
             tmpdual = 0
-        rs = RadioSetting("dualwatch", "Dual Watch", RadioSettingValueList(
-            DUALWATCH_LIST, DUALWATCH_LIST[tmpdual]))
+        rs = RadioSetting(
+        	    "dualwatch",
+        	    "Dual Watch, (link with Cross-band for RXMODE)", 
+                RadioSettingValueList(
+                    DUALWATCH_LIST,
+                    DUALWATCH_LIST[tmpdual]))
         basic.append(rs)
+        # RX_MODE
+
+        tmprxmode = 0 #joc test
+        if tmprxmode >= len(RXMODE_LIST):
+            tmprxmode = 0
+        rs = RadioSetting("RxMode", "RX Mode", RadioSettingValueList(
+            RXMODE_LIST, RXMODE_LIST[tmprxmode]))
+        if rs == 0 :   # Main only - CB off, DW off            
+           _mem.crossband = 0
+           _mem.dual_watch = 0
+
+        elif rs == 1 : # Crossband - CB on, DW off  
+           _mem.crossband = 1
+           _mem.dual_watch = 0
+
+        elif rs == 2 : # Dual rx respond - CB off, DW on   
+           _mem.crossband = 0
+           _mem.dual_watch = 1
+        else :   # Main tx dual rx - CB on, DW on 
+           _mem.crossband = 1
+           _mem.dual_watch = 1                   
+        
+        basic.append(rs)
+        
+        element.get_name() = "crossband"
+        rs = RadioSettingValueList(
+                    CROSSBAND_LIST,
+                    CROSSBAND_LIST[_mem.crossband]))
+        basic.append(rs)                   
 
         # Backlight auto mode
         tmpback = _mem.backlight_auto_mode
@@ -839,6 +1911,65 @@
                               BACKLIGHT_LIST,
                               BACKLIGHT_LIST[tmpback]))
         basic.append(rs)
+        # Backlight min
+        tmpback = _mem.backlight.backlight_min
+        if tmpback >= len(BACKLIGHT_LIST):
+            tmpback = 0
+        rs = RadioSetting("backlight.backlight_min",
+                          "Backlight min",
+                          RadioSettingValueList(
+                              BACKLIGHT_LIST,
+                              BACKLIGHT_LIST[tmpback]))
+        basic.append(rs)
+        
+        # Backlight max
+        tmpback = _mem.backlight.backlight_max
+        if tmpback >= len(BACKLIGHT_LIST):
+            tmpback = 0
+        rs = RadioSetting("backlight.backlight_max",
+                          "Backlight max",
+                          RadioSettingValueList(
+                              BACKLIGHT_LIST,
+                              BACKLIGHT_LIST[tmpback]))
+        basic.append(rs)
+        
+        # Backlight TX_RX
+        tmpback = _mem.Multi_option.Setting_backlight_on_TX_RX
+        if tmpback >= len(BACKLIGHT_TX_RX_LIST):
+            tmpback = 0
+        rs = RadioSetting("Multi_option.Setting_backlight_on_TX_RX",
+                          "Backlight TX_RX",
+                          RadioSettingValueList(
+                              BACKLIGHT_TX_RX_LIST,
+                              BACKLIGHT_TX_RX_LIST[tmpback]))
+        basic.append(rs)
+        # AM_fix
+        rs = RadioSetting(
+                "Multi_option.Setting_AM_fix",
+                "AM Fix",
+                RadioSettingValueBoolean(
+                    bool(_mem.Multi_option.Setting_AM_fix > 0)))
+        basic.append(rs)
+                     
+        # Mic_bar
+        rs = RadioSetting(
+                "Multi_option.Setting_mic_bar",
+                "Mic Bar",
+                RadioSettingValueBoolean(
+                    bool(_mem.Multi_option.Setting_mic_bar > 0)))
+        basic.append(rs)
+
+       # Bat_txt
+        tmpbattxt = _mem.Multi_option.Setting_battery_text
+        if tmpbattxt >= len(BAT_TXT_LIST):
+            tmpbattxt = 0
+        rs = RadioSetting("Multi_option.Setting_battery_text",
+                          "Bat txt",
+                          RadioSettingValueList(
+                              BAT_TXT_LIST,
+                              BAT_TXT_LIST[tmpback]))
+        basic.append(rs) 
+
 
         # Tail tone elimination
         rs = RadioSetting(
@@ -855,10 +1986,11 @@
 
         # Beep control
         rs = RadioSetting(
-                "beep_control",
+                "beep_keyM.beep_control",
                 "Beep control",
-                RadioSettingValueBoolean(bool(_mem.beep_control > 0)))
+                RadioSettingValueBoolean(bool(_mem.beep_keyM.beep_control > 0))) #joc add struct beep_keyM
         basic.append(rs)
+
 
         # Scan resume mode
         tmpscanres = _mem.scan_resume_mode
@@ -906,29 +2038,21 @@
             KEYPADTONE_LIST, KEYPADTONE_LIST[tmpkeypadtone]))
         basic.append(rs)
 
-        # Language
-        tmplanguage = _mem.language
-        if tmplanguage >= len(LANGUAGE_LIST):
-            tmplanguage = 0
-        rs = RadioSetting("language", "Language", RadioSettingValueList(
-            LANGUAGE_LIST, LANGUAGE_LIST[tmplanguage]))
-        basic.append(rs)
-
         # Alarm mode
         tmpalarmmode = _mem.alarm_mode
         if tmpalarmmode >= len(ALARMMODE_LIST):
             tmpalarmmode = 0
-        rs = RadioSetting("alarm_mode", "Alarm mode", RadioSettingValueList(
+        rs = RadioSetting("alarm_mode", "Alarm mode (* SEE Driver Information if available)", RadioSettingValueList(
             ALARMMODE_LIST, ALARMMODE_LIST[tmpalarmmode]))
         basic.append(rs)
 
         # Reminding of end of talk
-        tmpalarmmode = _mem.reminding_of_end_talk
+        tmpalarmmode = _mem.reminding_of_end_talk_ROGER
         if tmpalarmmode >= len(REMENDOFTALK_LIST):
             tmpalarmmode = 0
         rs = RadioSetting(
-                "reminding_of_end_talk",
-                "Reminding of end of talk",
+                "reminding_of_end_talk_ROGER",
+                "Reminding of end of talk (ROGER)",
                 RadioSettingValueList(
                     REMENDOFTALK_LIST,
                     REMENDOFTALK_LIST[tmpalarmmode]))
@@ -958,6 +2082,21 @@
                           RadioSettingValueString(0, 12, logo2))
         basic.append(rs)
 
+        tmpval = int(_mem.S0_S_meter_level_dbm)
+        if tmpval == 255:
+            tmpval = 130
+        rs = RadioSetting("S0_S_meter_level_dbm",
+                          "S0_S_meter_level_dbm, this is minus value(-)",
+                          RadioSettingValueInteger(0, 254, tmpval, 1))
+        basic.append(rs)
+
+        tmpval = int(_mem.S9_S_meter_level_dbm)
+        if tmpval == 255:
+            tmpval = 130
+        rs = RadioSetting("S9_S_meter_level_dbm",
+                          "S9_S_meter_level_dbm, this is minus value(-)",
+                          RadioSettingValueInteger(0, 254, tmpval, 1))
+        basic.append(rs)        
         # FM radio
         for i in range(1, 21):
             freqname = "FM_"+str(i)
@@ -977,41 +2116,53 @@
         tmpflock = _mem.int_flock
         if tmpflock >= len(FLOCK_LIST):
             tmpflock = 0
-        rs = RadioSetting(
-            "flock", "F-LOCK",
-            RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock]))
+        rs = RadioSetting("int_flock", "F-LOCK",
+                          RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock]))
         unlock.append(rs)
 
         # 350TX
-        rs = RadioSetting("350tx", "350TX - unlock 350-400MHz TX",
+        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350tx > 0)))
         unlock.append(rs)
 
+        # Killed
+        rs = RadioSetting("int_KILLED", "KILLED DTMF CALLING (* SEE Driver Information if available) ",
+                          RadioSettingValueBoolean(
+                              bool(_mem.int_KILLED > 0)))
+        unlock.append(rs)
         # 200TX
-        rs = RadioSetting("200tx", "200TX - unlock 174-350MHz TX",
+        rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX",
                           RadioSettingValueBoolean(
                               bool(_mem.int_200tx > 0)))
         unlock.append(rs)
 
         # 500TX
-        rs = RadioSetting("500tx", "500TX - unlock 500-600MHz TX",
+        rs = RadioSetting("int_500tx", "500TX - unlock 500-600MHz TX",
                           RadioSettingValueBoolean(
                               bool(_mem.int_500tx > 0)))
         unlock.append(rs)
 
         # 350EN
-        rs = RadioSetting("350en", "350EN - unlock 350-400MHz RX",
+        rs = RadioSetting("int_350en", "350EN - unlock 350-400MHz RX",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350en > 0)))
         unlock.append(rs)
 
         # SCREEN
-        rs = RadioSetting("scren", "SCREN - scrambler enable",
+        rs = RadioSetting("int_scren", "SCREN - scrambler enable",
                           RadioSettingValueBoolean(
                               bool(_mem.int_scren > 0)))
         unlock.append(rs)
 
+        # Battery Type
+        tmpbtype = _mem.Battery_type
+        if tmpbtype >= len(BATTYPE_LIST): 
+            tmpbtype = 0
+        rs = RadioSetting(
+            "Battery_type", "Battery Type",
+            RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
+        unlock.append(rs)
         # readonly info
         # Firmware
         if self.FIRMWARE_VERSION == "":
@@ -1027,16 +2178,105 @@
 
         # TODO: remove showing the driver version when it's in mainline chirp
         # Driver version
+
         val = RadioSettingValueString(0, 128, DRIVER_VERSION)
         val.set_mutable(False)
         rs = RadioSetting("driver_ver", "Driver version", val)
         roinfo.append(rs)
 
-        # No limits version for hacked firmware
-        val = RadioSettingValueBoolean(self.FIRMWARE_NOLIMITS)
+        # FM RADIO        
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
         val.set_mutable(False)
-        rs = RadioSetting("nolimits", "Limits disabled for modified firmware",
-                          val)
+        rs = RadioSetting("FONCTION_FMRADIO", "FONCTION FMRADIO", val)
+        roinfo.append(rs)          
+
+         # NOAA       
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_NOAA", "FONCTION NOAA", val)
+        roinfo.append(rs)          
+ 
+        # VOICE
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_VOICE", "FONCTION VOICE", val)
+        roinfo.append(rs)          
+ 
+        # VOX
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_VOX", "FONCTION VOX", val)
+        roinfo.append(rs)          
+
+        # ALARM
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_ALARM", "FONCTION ALARM", val)
+        roinfo.append(rs)          
+
+        # TX1750
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_TX1750", "FONCTION TX1750", val)
+        roinfo.append(rs)          
+
+        # PWRON_PASSWORD
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_PWRON_PASSWORD", "FONCTION PWRON PASSWORD", val)
+        roinfo.append(rs)          
+
+        # TX1750
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_DTMF_CALLING", "FONCTION DTMF CALLING", val)
+        roinfo.append(rs)          
+        # FLASHLIGHT
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_FLASHLIGHT", "FONCTION FLASHLIGHT", val)
+        roinfo.append(rs)          
+
+        # WIDE_RX
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_WIDE_RX", "FONCTION WIDE RX", val)
+        roinfo.append(rs) 
+
+        # RAW_DEMODULATORS
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_RAW_DEMODULATORS", "FONCTION RAW DEMODULATORS", val)
+        roinfo.append(rs) 
+                 
+        # BLMIN_TMP_OFF
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("FONCTION_BLMIN_TMP_OFF", "FONCTION BLMIN TMP OFF", val)
+        roinfo.append(rs) 
+
+        # COMPILER_OPTION2_5
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("COMPILER_OPTION2_5", "COMPILER OPTION2 5", val)
+        roinfo.append(rs) 
+
+        # COMPILER_OPTION2_6
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("COMPILER_OPTION2_6", "COMPILER OPTION2 6", val)
+        roinfo.append(rs) 
+
+        # COMPILER_OPTION2_7
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("COMPILER_OPTION2_7", "COMPILER OPTION2 7", val)
+        roinfo.append(rs) 
+
+        # COMPILER_OPTION2_8
+        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val.set_mutable(False)
+        rs = RadioSetting("COMPILER_OPTION2_8", "COMPILER OPTION2 8", val)
         roinfo.append(rs)
 
         return top
@@ -1177,19 +2417,3 @@
                     _mem4.channel_attributes[number].is_scanlist2 = 0
 
         return mem
-
-
-@directory.register
-class UVK5Radio_nolimit(UVK5Radio):
-    VENDOR = "Quansheng"
-    MODEL = "UV-K5 (modified firmware)"
-    VARIANT = "nolimits"
-    FIRMWARE_NOLIMITS = True
-
-    def get_features(self):
-        rf = UVK5Radio.get_features(self)
-        # This is what the BK4819 chip supports
-        rf.valid_bands = [(18000000,  620000000),
-                          (840000000, 1300000000)
-                          ]
-        return rf
