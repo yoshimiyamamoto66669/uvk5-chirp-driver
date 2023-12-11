@@ -125,8 +125,8 @@ u8 vox_level;
 u8 mic_gain;
 
 struct {
-  u8 backlight_max:4,
-  backlight_min:4;
+  u8 backlight_min:4,
+  backlight_max:4;
   } backlight;
 u8 channel_display_mode;
 u8 crossband;
@@ -138,8 +138,8 @@ u8 vfo_open;
 
 #seekto 0xe90;
 struct {
-  u8 beep_control:1,
-  keyM_longpress_action:7;
+  u8 keyM_longpress_action:7,
+     beep_control:1;
   } beep_keyM;
 u8 key1_shortpress_action;
 u8 key1_longpress_action;
