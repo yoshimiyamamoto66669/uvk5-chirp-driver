@@ -1,4 +1,4 @@
-# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
+    # Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
 # Adapted For UV-K5 EGZUMER custom software By Jocelyn Maheu
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
@@ -1895,11 +1895,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         
         basic.append(rs)
         
-        element.get_name() = "crossband"
-        rs = RadioSettingValueList(
-                    CROSSBAND_LIST,
-                    CROSSBAND_LIST[_mem.crossband]))
-        basic.append(rs)                   
+ #       element.get_name() = "crossband"
+ #       rs = RadioSettingValueList(
+ #                   CROSSBAND_LIST,
+ #                   CROSSBAND_LIST[_mem.crossband]))
+ #       basic.append(rs)                   
 
         # Backlight auto mode
         tmpback = _mem.backlight_auto_mode
