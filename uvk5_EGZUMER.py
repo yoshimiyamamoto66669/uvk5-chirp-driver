@@ -2097,7 +2097,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         tmpval = int(_mem.S9_S_meter_level_dbm)
         if tmpval == 255:
-            tmpval = 130
+            tmpval = 76
         rs = RadioSetting("S9_S_meter_level_dbm",
                           "S9_S_meter_level_dbm, this is minus value(-)",
                           RadioSettingValueInteger(0, 254, tmpval, 1))
