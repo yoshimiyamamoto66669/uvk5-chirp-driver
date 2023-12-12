@@ -22,3 +22,7 @@ in basic setting : s-meter s0 and s9,
 in driver information :  all the option of the firmware are display their status.
 in unlock : the battery type 1600/2200mah
 in programable key : the M key has been add
+
+struct put bitfield in reverse bit 0 to 7  as bit0 is on the left... 
+normaly it bit0 on the right, so inverse struct bitfield,
+stay to test the compiler version bitfield ... not yet implement in my firmware version in radio... 
