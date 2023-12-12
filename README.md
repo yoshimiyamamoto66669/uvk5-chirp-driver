@@ -41,3 +41,6 @@ in programable key : the M key has been add
 struct put bitfield in reverse bit 0 to 7  as bit0 is on the left... 
 normaly it bit0 on the right, so inverse struct bitfield,
 stay to test the compiler version bitfield ... not yet implement in my firmware version in radio... 
+
+12 dec 2023 : menu setting re arranged order to follow the radio menu order , when possible. 
+ add a reference name in chirp for the menu in the radio in parenthese (****)  ex: backlight level min  (BlMin)
