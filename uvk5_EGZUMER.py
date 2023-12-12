@@ -1917,7 +1917,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
         # Backlight min
         tmpback = _mem.backlight.backlight_min
-        if tmpback >= len(BACKLIGHT__LVL_LIST):
+        if tmpback >= len(BACKLIGHT_LVL_LIST):
             tmpback = 0
         rs = RadioSetting("backlight.backlight_min",
                           "Backlight min",
@@ -1967,11 +1967,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpbattxt = _mem.Multi_option.Setting_battery_text
         if tmpbattxt >= len(BAT_TXT_LIST):
             tmpbattxt = 0
+
         rs = RadioSetting("Multi_option.Setting_battery_text",
                           "Bat txt",
                           RadioSettingValueList(
                               BAT_TXT_LIST,
-                              BAT_TXT_LIST[tmpback]))
+                              BAT_TXT_LIST[tmpbattxt]))
         basic.append(rs) 
 
 
