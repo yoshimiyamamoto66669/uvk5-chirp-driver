@@ -214,13 +214,14 @@ u8 int_350en;
 u8 int_scren;
 
 struct {
-u8 unknown:1,
-    Setting_live_DTMF_decoder:1,
-    Setting_battery_text:2,
-    Setting_mic_bar:1,
+u8  Setting_backlight_on_TX_RX:2,
     Setting_AM_fix:1,
-    Setting_backlight_on_TX_RX:2;
+    Setting_mic_bar:1,
+    Setting_battery_text:2,
+    Setting_live_DTMF_decoder:1,
+    unknown:1;
   } Multi_option;
+  
 #seekto 0xf50;
 struct {
 char name[16];
@@ -299,6 +300,9 @@ BATTYPE_LIST = ["1600_mAh", "2200_mAh"]
 BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
 # Backlight auto mode
 BACKLIGHT_LIST = ["Off", "5s", "10s", "20s", "1min", "2min", "4min", "Always On"]
+
+# Backlight LVL
+BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
@@ -1082,12 +1086,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # Backlight min
             if element.get_name() == "backlight.backlight_min":
                 _mem.backlight.backlight_min = \
-                        BACKLIGHT_LIST.index(str(element.value))
+                        BACKLIGHT_LVL_LIST.index(str(element.value))
 
             # Backlight max
             if element.get_name() == "backlight.backlight_max":
                 _mem.backlight.backlight_max = \
-                        BACKLIGHT_LIST.index(str(element.value))
+                        BACKLIGHT_LVL_LIST.index(str(element.value))
 
             # Backlight TX_RX
             if element.get_name() == "Multi_option.Setting_backlight_on_TX_RX":
@@ -1913,24 +1917,24 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
         # Backlight min
         tmpback = _mem.backlight.backlight_min
-        if tmpback >= len(BACKLIGHT_LIST):
+        if tmpback >= len(BACKLIGHT__LVL_LIST):
             tmpback = 0
         rs = RadioSetting("backlight.backlight_min",
                           "Backlight min",
                           RadioSettingValueList(
-                              BACKLIGHT_LIST,
-                              BACKLIGHT_LIST[tmpback]))
+                              BACKLIGHT_LVL_LIST,
+                              BACKLIGHT_LVL_LIST[tmpback]))
         basic.append(rs)
         
         # Backlight max
         tmpback = _mem.backlight.backlight_max
-        if tmpback >= len(BACKLIGHT_LIST):
+        if tmpback >= len(BACKLIGHT_LVL_LIST):
             tmpback = 0
         rs = RadioSetting("backlight.backlight_max",
                           "Backlight max",
                           RadioSettingValueList(
-                              BACKLIGHT_LIST,
-                              BACKLIGHT_LIST[tmpback]))
+                              BACKLIGHT_LVL_LIST,
+                              BACKLIGHT_LVL_LIST[tmpback]))
         basic.append(rs)
         
         # Backlight TX_RX
