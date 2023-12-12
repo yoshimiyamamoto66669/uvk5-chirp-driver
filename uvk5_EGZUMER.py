@@ -1146,11 +1146,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             if element.get_name() == "S0_S_meter_level_dbm":
                 _mem.S0_S_meter_level_dbm = \
-                        int(int(element.value)/10)
+                        int(int(element.value))
 
             if element.get_name() == "S9_S_meter_level_dbm":
                 _mem.S9_S_meter_level_dbm = \
-                        int(int(element.value)/10)
+                        int(int(element.value))
             # Alarm mode
             if element.get_name() == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
@@ -2092,7 +2092,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpval = 130
         rs = RadioSetting("S0_S_meter_level_dbm",
                           "S0_S_meter_level_dbm, this is minus value(-)",
-                          RadioSettingValueInteger(0, 254, tmpval, 1))
+                          RadioSettingValueInteger(0, 254, tmpval))
         basic.append(rs)
 
         tmpval = int(_mem.S9_S_meter_level_dbm)
@@ -2100,7 +2100,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpval = 76
         rs = RadioSetting("S9_S_meter_level_dbm",
                           "S9_S_meter_level_dbm, this is minus value(-)",
-                          RadioSettingValueInteger(0, 254, tmpval, 1))
+                          RadioSettingValueInteger(0, 254, tmpval))
         basic.append(rs)        
         # FM radio
         for i in range(1, 21):
