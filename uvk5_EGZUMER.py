@@ -39,7 +39,7 @@ from chirp import chirp_common, directory, bitwise, memmap, errors, util
 from chirp.settings import RadioSetting, RadioSettingGroup, \
     RadioSettingValueBoolean, RadioSettingValueList, \
     RadioSettingValueInteger, RadioSettingValueString, \
-    RadioSettings
+    RadioSettings, InvalidValueError
 
 LOG = logging.getLogger(__name__)
 
@@ -346,7 +346,7 @@ DTCS_CODES = [
 ]
 
 # flock list extended 
-FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "ALL (Special Manipulation Needed)", "NONE"] #joc: add extra parameter 
+FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "Disable All", "Unlock All"] #joc: add extra parameter 
 
 SCANRESUME_LIST = ["TO: Resume after 5 seconds",
                    "CO: Resume after signal dissapears",
@@ -2117,12 +2117,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # unlock settings
 
-        # F-LOCK
+        # F-LOCK     
+        def validate_int_flock( value):
+            if value==FLOCK_LIST[7]:
+                msg = value + " can only be enabled from radio menu"
+                raise InvalidValueError(msg)
+            return value
+        
         tmpflock = _mem.int_flock
         if tmpflock >= len(FLOCK_LIST):
             tmpflock = 0
-        rs = RadioSetting("int_flock", "F-LOCK",
-                          RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock]))
+        val = RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock])
+        rs = RadioSetting("int_flock", "F-LOCK", val)
+        val.set_validate_callback(validate_int_flock)
         unlock.append(rs)
 
         # 350TX
