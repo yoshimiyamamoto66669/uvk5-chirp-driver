@@ -2124,8 +2124,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # F-LOCK     
         def validate_int_flock( value):
-            if value==FLOCK_LIST[7]:
-                msg = value + " can only be enabled from radio menu"
+            memVal = self._memobj.int_flock
+            if memVal!=7 and value==FLOCK_LIST[7]:
+                msg = "\"" + value + "\" can only be enabled from radio menu"
                 raise InvalidValueError(msg)
             return value
         
