@@ -1,4 +1,4 @@
-    # Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
+# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
 # Adapted For UV-K5 EGZUMER custom software By Jocelyn Maheu
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
@@ -1011,12 +1011,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         else:
             enc = 0
 
-        rs = RadioSetting("scrambler", "Scrambler", RadioSettingValueList(
+        rs = RadioSetting("scrambler", "Scrambler (Scramb)", RadioSettingValueList(
             SCRAMBLER_LIST, SCRAMBLER_LIST[enc]))
         mem.extra.append(rs)
         tmpcomment += "Scrambler:"+SCRAMBLER_LIST[enc]+" "
 
-        rs = RadioSetting("scanlists", "Scanlists", RadioSettingValueList(
+        rs = RadioSetting("scanlists", "Scanlists (SList)", RadioSettingValueList(
             SCANLIST_LIST, tmpscn))
         mem.extra.append(rs)
 
@@ -1485,7 +1485,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpval = int(_mem.key1_shortpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("key1_shortpress_action", "Side key 1 short press",
+        rs = RadioSetting("key1_shortpress_action", "Side key 1 short press (F1Shrt)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -1493,7 +1493,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpval = int(_mem.key1_longpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("key1_longpress_action", "Side key 1 long press",
+        rs = RadioSetting("key1_longpress_action", "Side key 1 long press (F1Long)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -1501,7 +1501,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpval = int(_mem.key2_shortpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("key2_shortpress_action", "Side key 2 short press",
+        rs = RadioSetting("key2_shortpress_action", "Side key 2 short press (F2Shrt)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -1509,14 +1509,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpval = int(_mem.key2_longpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("key2_longpress_action", "Side key 2 long press",
+        rs = RadioSetting("key2_longpress_action", "Side key 2 long press (F2Long)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
         tmpval = int(_mem.beep_keyM.keyM_longpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("beep_keyM.keyM_longpress_action", "(M) Menu long press ",
+        rs = RadioSetting("beep_keyM.keyM_longpress_action", "(M) Menu long press (M Long)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -1824,7 +1824,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpmicgain = _mem.mic_gain
         if tmpmicgain > 4:
             tmpmicgain = 4
-        rs = RadioSetting("mic_gain", "Mic Gain",
+        rs = RadioSetting("mic_gain", "Mic Gain (Mic)",
                           RadioSettingValueInteger(0, 4, tmpmicgain))
         basic.append(rs)
 
@@ -1858,7 +1858,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpbatsave = BATSAVE_LIST.index("1:4")
         rs = RadioSetting(
                 "battery_save",
-                "Battery Save",
+                "Battery Save (BatSav)",
                 RadioSettingValueList(
                     BATSAVE_LIST,
                     BATSAVE_LIST[tmpbatsave]))
@@ -1910,7 +1910,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpback >= len(BACKLIGHT_LIST):
             tmpback = 0
         rs = RadioSetting("backlight_auto_mode",
-                          "Backlight auto mode",
+                          "Backlight auto mode (BackLt)",
                           RadioSettingValueList(
                               BACKLIGHT_LIST,
                               BACKLIGHT_LIST[tmpback]))
@@ -1920,7 +1920,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpback >= len(BACKLIGHT_LVL_LIST):
             tmpback = 0
         rs = RadioSetting("backlight.backlight_min",
-                          "Backlight min",
+                          "Backlight level min (BLMin)",
                           RadioSettingValueList(
                               BACKLIGHT_LVL_LIST,
                               BACKLIGHT_LVL_LIST[tmpback]))
@@ -1931,7 +1931,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpback >= len(BACKLIGHT_LVL_LIST):
             tmpback = 0
         rs = RadioSetting("backlight.backlight_max",
-                          "Backlight max",
+                          "Backlight level max (BLMax)",
                           RadioSettingValueList(
                               BACKLIGHT_LVL_LIST,
                               BACKLIGHT_LVL_LIST[tmpback]))
@@ -1942,7 +1942,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpback >= len(BACKLIGHT_TX_RX_LIST):
             tmpback = 0
         rs = RadioSetting("Multi_option.Setting_backlight_on_TX_RX",
-                          "Backlight TX_RX",
+                          "Backlight TX RX (BltTRX)",
                           RadioSettingValueList(
                               BACKLIGHT_TX_RX_LIST,
                               BACKLIGHT_TX_RX_LIST[tmpback]))
@@ -1950,7 +1950,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # AM_fix
         rs = RadioSetting(
                 "Multi_option.Setting_AM_fix",
-                "AM Fix",
+                "AM Fix (AM Fix)",
                 RadioSettingValueBoolean(
                     bool(_mem.Multi_option.Setting_AM_fix > 0)))
         basic.append(rs)
@@ -1958,7 +1958,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Mic_bar
         rs = RadioSetting(
                 "Multi_option.Setting_mic_bar",
-                "Mic Bar",
+                "Microphone Bar display (MicBar)",
                 RadioSettingValueBoolean(
                     bool(_mem.Multi_option.Setting_mic_bar > 0)))
         basic.append(rs)
@@ -1969,7 +1969,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpbattxt = 0
 
         rs = RadioSetting("Multi_option.Setting_battery_text",
-                          "Bat txt",
+                          "Battery Level Display (BatTXT)",
                           RadioSettingValueList(
                               BAT_TXT_LIST,
                               BAT_TXT_LIST[tmpbattxt]))
@@ -1992,7 +1992,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Beep control
         rs = RadioSetting(
                 "beep_keyM.beep_control",
-                "Beep control",
+                "Beep control (BEEP)",
                 RadioSettingValueBoolean(bool(_mem.beep_keyM.beep_control > 0))) #joc add struct beep_keyM
         basic.append(rs)
 
@@ -2012,7 +2012,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Keypad locked
         rs = RadioSetting(
                 "key_lock",
-                "Keypad lock",
+                "Keypad lock (KeyLck)",
                 RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
         basic.append(rs)
 
@@ -2029,7 +2029,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpdispmode = 0
         rs = RadioSetting(
                 "welcome_mode",
-                "Power on display mode",
+                "Power on display message (POnMsg)",
                 RadioSettingValueList(
                     WELCOME_LIST,
                     WELCOME_LIST[tmpdispmode]))
@@ -2057,7 +2057,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpalarmmode = 0
         rs = RadioSetting(
                 "reminding_of_end_talk_ROGER",
-                "Reminding of end of talk (ROGER)",
+                "Reminding of end of talk (Roger)",
                 RadioSettingValueList(
                     REMENDOFTALK_LIST,
                     REMENDOFTALK_LIST[tmpalarmmode]))
@@ -2128,12 +2128,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpflock >= len(FLOCK_LIST):
             tmpflock = 0
         val = RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock])
-        rs = RadioSetting("int_flock", "F-LOCK", val)
+        rs = RadioSetting("int_flock", "F-LOCK (F Lock)", val)
         val.set_validate_callback(validate_int_flock)
         unlock.append(rs)
 
         # 350TX
-        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX",
+        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX (Tx 350)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350tx > 0)))
         unlock.append(rs)
@@ -2144,25 +2144,25 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                               bool(_mem.int_KILLED > 0)))
         unlock.append(rs)
         # 200TX
-        rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX",
+        rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX (Tx 200)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_200tx > 0)))
         unlock.append(rs)
 
         # 500TX
-        rs = RadioSetting("int_500tx", "500TX - unlock 500-600MHz TX",
+        rs = RadioSetting("int_500tx", "500TX - unlock 500-600MHz TX (Tx 500)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_500tx > 0)))
         unlock.append(rs)
 
         # 350EN
-        rs = RadioSetting("int_350en", "350EN - unlock 350-400MHz RX",
+        rs = RadioSetting("int_350en", "350EN - unlock 350-400MHz RX (350 En)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350en > 0)))
         unlock.append(rs)
 
         # SCREEN
-        rs = RadioSetting("int_scren", "SCREN - scrambler enable",
+        rs = RadioSetting("int_scren", "SCREN - scrambler enable (ScraEn)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_scren > 0)))
         unlock.append(rs)
@@ -2172,7 +2172,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpbtype >= len(BATTYPE_LIST): 
             tmpbtype = 0
         rs = RadioSetting(
-            "Battery_type", "Battery Type",
+            "Battery_type", "Battery Type (BatTyp)",
             RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
         unlock.append(rs)
         # readonly info
