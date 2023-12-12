@@ -1780,12 +1780,18 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueInteger(1, 200, tmpc))
         basic.append(rs)
 
-        # squelch
-        tmpsq = _mem.squelch
-        if tmpsq > 9:
-            tmpsq = 1
-        rs = RadioSetting("squelch", "Squelch",
-                          RadioSettingValueInteger(0, 9, tmpsq))
+        # Keypad locked
+        rs = RadioSetting(
+                "key_lock",
+                "Keypad lock (KeyLck)",
+                RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
+        basic.append(rs)
+
+        # Auto keypad lock
+        rs = RadioSetting(
+                "auto_keypad_lock",
+                "Auto keypad lock",
+                RadioSettingValueBoolean(bool(_mem.auto_keypad_lock > 0)))
         basic.append(rs)
 
         # TOT
@@ -1794,62 +1800,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmptot = 10
         rs = RadioSetting(
                 "tot",
-                "Max talk time [min]",
+                "Max talk time [min] (TxTout)",
                 RadioSettingValueInteger(0, 10, tmptot))
-        basic.append(rs)
-
-        # NOAA autoscan
-        rs = RadioSetting(
-                "noaa_autoscan",
-                "NOAA Autoscan (* SEE Driver Information if available)", RadioSettingValueBoolean(
-                    bool(_mem.noaa_autoscan > 0)))
-        basic.append(rs)
-
-        # VOX switch
-        rs = RadioSetting(
-                "vox_switch",
-                "VOX enabled", RadioSettingValueBoolean(
-                    bool(_mem.vox_switch > 0)))
-        basic.append(rs)
-
-        # VOX Level
-        tmpvox = _mem.vox_level+1
-        if tmpvox > 10:
-            tmpvox = 10
-        rs = RadioSetting("vox_level", "VOX Level",
-                          RadioSettingValueInteger(1, 10, tmpvox))
-        basic.append(rs)
-
-        # Mic gain
-        tmpmicgain = _mem.mic_gain
-        if tmpmicgain > 4:
-            tmpmicgain = 4
-        rs = RadioSetting("mic_gain", "Mic Gain (Mic)",
-                          RadioSettingValueInteger(0, 4, tmpmicgain))
-        basic.append(rs)
-
-        # Channel display mode
-        tmpchdispmode = _mem.channel_display_mode
-        if tmpchdispmode >= len(CHANNELDISP_LIST):
-            tmpchdispmode = 0
-        rs = RadioSetting(
-                "channel_display_mode",
-                "Channel display mode",
-                RadioSettingValueList(
-                    CHANNELDISP_LIST,
-                    CHANNELDISP_LIST[tmpchdispmode]))
-        basic.append(rs)
-
-        # Crossband receiving/transmitting
-        tmpcross = _mem.crossband
-        if tmpcross >= len(CROSSBAND_LIST):
-            tmpcross = 0
-        rs = RadioSetting(
-        	    "crossband",
-                "Cross-band receiving/transmitting, (link with Dual Watch for RXMODE)",
-                RadioSettingValueList(
-                    CROSSBAND_LIST,
-                    CROSSBAND_LIST[tmpcross]))
         basic.append(rs)
 
         # Battery save
@@ -1864,46 +1816,78 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     BATSAVE_LIST[tmpbatsave]))
         basic.append(rs)
 
-        # Dual watch
-        tmpdual = _mem.dual_watch
-        if tmpdual >= len(DUALWATCH_LIST):
-            tmpdual = 0
+        # NOAA autoscan
         rs = RadioSetting(
-        	    "dualwatch",
-        	    "Dual Watch, (link with Cross-band for RXMODE)", 
+                "noaa_autoscan",
+                "NOAA Autoscan (* SEE Driver Information if available)", RadioSettingValueBoolean(
+                    bool(_mem.noaa_autoscan > 0)))
+        basic.append(rs)
+
+        # Mic gain
+        tmpmicgain = _mem.mic_gain
+        if tmpmicgain > 4:
+            tmpmicgain = 4
+        rs = RadioSetting("mic_gain", "Mic Gain (Mic)",
+                          RadioSettingValueInteger(0, 4, tmpmicgain))
+        basic.append(rs)
+                  
+        # Mic_bar
+        rs = RadioSetting(
+                "Multi_option.Setting_mic_bar",
+                "Microphone Bar display (MicBar)",
+                RadioSettingValueBoolean(
+                    bool(_mem.Multi_option.Setting_mic_bar > 0)))
+        basic.append(rs)
+
+        # Channel display mode
+        tmpchdispmode = _mem.channel_display_mode
+        if tmpchdispmode >= len(CHANNELDISP_LIST):
+            tmpchdispmode = 0
+        rs = RadioSetting(
+                "channel_display_mode",
+                "Channel display mode (ChDisp)",
                 RadioSettingValueList(
-                    DUALWATCH_LIST,
-                    DUALWATCH_LIST[tmpdual]))
+                    CHANNELDISP_LIST,
+                    CHANNELDISP_LIST[tmpchdispmode]))
         basic.append(rs)
-        # RX_MODE
 
-        tmprxmode = 0 #joc test
-        if tmprxmode >= len(RXMODE_LIST):
-            tmprxmode = 0
-        rs = RadioSetting("RxMode", "RX Mode", RadioSettingValueList(
-            RXMODE_LIST, RXMODE_LIST[tmprxmode]))
-        if rs == 0 :   # Main only - CB off, DW off            
-           _mem.crossband = 0
-           _mem.dual_watch = 0
-
-        elif rs == 1 : # Crossband - CB on, DW off  
-           _mem.crossband = 1
-           _mem.dual_watch = 0
-
-        elif rs == 2 : # Dual rx respond - CB off, DW on   
-           _mem.crossband = 0
-           _mem.dual_watch = 1
-        else :   # Main tx dual rx - CB on, DW on 
-           _mem.crossband = 1
-           _mem.dual_watch = 1                   
-        
+        # Power on display mode
+        tmpdispmode = _mem.power_on_dispmode
+        if tmpdispmode >= len(WELCOME_LIST):
+            tmpdispmode = 0
+        rs = RadioSetting(
+                "welcome_mode",
+                "Power on display message (POnMsg)",
+                RadioSettingValueList(
+                    WELCOME_LIST,
+                    WELCOME_LIST[tmpdispmode]))
         basic.append(rs)
         
- #       element.get_name() = "crossband"
- #       rs = RadioSettingValueList(
- #                   CROSSBAND_LIST,
- #                   CROSSBAND_LIST[_mem.crossband]))
- #       basic.append(rs)                   
+        # Logo string 1
+        logo1 = str(_mem.logo_line1).strip("\x20\x00\xff") + "\x00"
+        logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
+        rs = RadioSetting("logo1", "Logo string 1 (MAX 12 characters)",
+                          RadioSettingValueString(0, 12, logo1))
+        basic.append(rs)
+
+        # Logo string 2
+        logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
+        logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
+        rs = RadioSetting("logo2", "Logo string 2 ( MAX 12 characters)",
+                          RadioSettingValueString(0, 12, logo2))
+        basic.append(rs)
+
+       # Bat_txt
+        tmpbattxt = _mem.Multi_option.Setting_battery_text
+        if tmpbattxt >= len(BAT_TXT_LIST):
+            tmpbattxt = 0
+
+        rs = RadioSetting("Multi_option.Setting_battery_text",
+                          "Battery Level Display (BatTXT)",
+                          RadioSettingValueList(
+                              BAT_TXT_LIST,
+                              BAT_TXT_LIST[tmpbattxt]))
+        basic.append(rs) 
 
         # Backlight auto mode
         tmpback = _mem.backlight_auto_mode
@@ -1947,47 +1931,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                               BACKLIGHT_TX_RX_LIST,
                               BACKLIGHT_TX_RX_LIST[tmpback]))
         basic.append(rs)
-        # AM_fix
-        rs = RadioSetting(
-                "Multi_option.Setting_AM_fix",
-                "AM Fix (AM Fix)",
-                RadioSettingValueBoolean(
-                    bool(_mem.Multi_option.Setting_AM_fix > 0)))
-        basic.append(rs)
-                     
-        # Mic_bar
-        rs = RadioSetting(
-                "Multi_option.Setting_mic_bar",
-                "Microphone Bar display (MicBar)",
-                RadioSettingValueBoolean(
-                    bool(_mem.Multi_option.Setting_mic_bar > 0)))
-        basic.append(rs)
-
-       # Bat_txt
-        tmpbattxt = _mem.Multi_option.Setting_battery_text
-        if tmpbattxt >= len(BAT_TXT_LIST):
-            tmpbattxt = 0
-
-        rs = RadioSetting("Multi_option.Setting_battery_text",
-                          "Battery Level Display (BatTXT)",
-                          RadioSettingValueList(
-                              BAT_TXT_LIST,
-                              BAT_TXT_LIST[tmpbattxt]))
-        basic.append(rs) 
-
-
-        # Tail tone elimination
-        rs = RadioSetting(
-                "tail_note_elimination",
-                "Tail tone elimination",
-                RadioSettingValueBoolean(
-                    bool(_mem.tail_note_elimination > 0)))
-        basic.append(rs)
-
-        # VFO open
-        rs = RadioSetting("vfo_open", "VFO open",
-                          RadioSettingValueBoolean(bool(_mem.vfo_open > 0)))
-        basic.append(rs)
 
         # Beep control
         rs = RadioSetting(
@@ -1996,6 +1939,123 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 RadioSettingValueBoolean(bool(_mem.beep_keyM.beep_control > 0))) #joc add struct beep_keyM
         basic.append(rs)
 
+        # Reminding of end of talk
+        tmpalarmmode = _mem.reminding_of_end_talk_ROGER
+        if tmpalarmmode >= len(REMENDOFTALK_LIST):
+            tmpalarmmode = 0
+        rs = RadioSetting(
+                "reminding_of_end_talk_ROGER",
+                "Reminding of end of talk (Roger)",
+                RadioSettingValueList(
+                    REMENDOFTALK_LIST,
+                    REMENDOFTALK_LIST[tmpalarmmode]))
+        basic.append(rs)
+       
+        # Tail tone elimination
+        rs = RadioSetting(
+                "tail_note_elimination",
+                "Tail tone elimination (STE)",
+                RadioSettingValueBoolean(
+                    bool(_mem.tail_note_elimination > 0)))
+        basic.append(rs)
+        
+        # Repeater tail tone elimination
+        tmprte = _mem.repeater_tail_elimination
+        if tmprte >= len(RTE_LIST):
+            tmprte = 0
+        rs = RadioSetting(
+                "repeater_tail_elimination",
+                "Repeater tail tone elimination (RP STE)",
+                RadioSettingValueList(RTE_LIST, RTE_LIST[tmprte]))
+        basic.append(rs)
+
+        # AM_fix
+        rs = RadioSetting(
+                "Multi_option.Setting_AM_fix",
+                "AM Fix (AM Fix)",
+                RadioSettingValueBoolean(
+                    bool(_mem.Multi_option.Setting_AM_fix > 0)))
+        basic.append(rs)
+        # VOX switch
+        rs = RadioSetting(
+                "vox_switch",
+                "VOX enabled (* SEE Driver Information if available)", RadioSettingValueBoolean(
+                    bool(_mem.vox_switch > 0)))
+        basic.append(rs)
+
+        # VOX Level
+        tmpvox = _mem.vox_level+1
+        if tmpvox > 10:
+            tmpvox = 10
+        rs = RadioSetting("vox_level", "VOX Level (VOX)",
+                          RadioSettingValueInteger(1, 10, tmpvox))
+        basic.append(rs)
+
+        # Crossband receiving/transmitting
+        tmpcross = _mem.crossband
+        if tmpcross >= len(CROSSBAND_LIST):
+            tmpcross = 0
+        rs = RadioSetting(
+        	    "crossband",
+                "Cross-band receiving/transmitting, (link with Dual Watch for RXMODE)",
+                RadioSettingValueList(
+                    CROSSBAND_LIST,
+                    CROSSBAND_LIST[tmpcross]))
+        basic.append(rs)
+
+        # Dual watch
+        tmpdual = _mem.dual_watch
+        if tmpdual >= len(DUALWATCH_LIST):
+            tmpdual = 0
+        rs = RadioSetting(
+        	    "dualwatch",
+        	    "Dual Watch, (link with Cross-band for RXMODE)", 
+                RadioSettingValueList(
+                    DUALWATCH_LIST,
+                    DUALWATCH_LIST[tmpdual]))
+        basic.append(rs)
+
+        # RX_MODE
+
+        tmprxmode = 0 #joc test
+        if tmprxmode >= len(RXMODE_LIST):
+            tmprxmode = 0
+        rs = RadioSetting("RxMode", "RX Mode (RxMode)", RadioSettingValueList(
+            RXMODE_LIST, RXMODE_LIST[tmprxmode]))
+        if rs == 0 :   # Main only - CB off, DW off            
+           _mem.crossband = 0
+           _mem.dual_watch = 0
+
+        elif rs == 1 : # Crossband - CB on, DW off  
+           _mem.crossband = 1
+           _mem.dual_watch = 0
+
+        elif rs == 2 : # Dual rx respond - CB off, DW on   
+           _mem.crossband = 0
+           _mem.dual_watch = 1
+        else :   # Main tx dual rx - CB on, DW on 
+           _mem.crossband = 1
+           _mem.dual_watch = 1                   
+        
+        basic.append(rs)
+ **
+         def validate_int_flock( value):
+            if value==FLOCK_LIST[7]:
+                msg = value + " can only be enabled from radio menu"
+                raise InvalidValueError(msg)
+            return value
+        
+ **       
+ #       element.get_name() = "crossband"
+ #       rs = RadioSettingValueList(
+ #                   CROSSBAND_LIST,
+ #                   CROSSBAND_LIST[_mem.crossband]))
+ #       basic.append(rs)                   
+
+        # VFO open
+        rs = RadioSetting("vfo_open", "VFO open",
+                          RadioSettingValueBoolean(bool(_mem.vfo_open > 0)))
+        basic.append(rs)
 
         # Scan resume mode
         tmpscanres = _mem.scan_resume_mode
@@ -2008,33 +2068,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     SCANRESUME_LIST,
                     SCANRESUME_LIST[tmpscanres]))
         basic.append(rs)
-
-        # Keypad locked
-        rs = RadioSetting(
-                "key_lock",
-                "Keypad lock (KeyLck)",
-                RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
-        basic.append(rs)
-
-        # Auto keypad lock
-        rs = RadioSetting(
-                "auto_keypad_lock",
-                "Auto keypad lock",
-                RadioSettingValueBoolean(bool(_mem.auto_keypad_lock > 0)))
-        basic.append(rs)
-
-        # Power on display mode
-        tmpdispmode = _mem.power_on_dispmode
-        if tmpdispmode >= len(WELCOME_LIST):
-            tmpdispmode = 0
-        rs = RadioSetting(
-                "welcome_mode",
-                "Power on display message (POnMsg)",
-                RadioSettingValueList(
-                    WELCOME_LIST,
-                    WELCOME_LIST[tmpdispmode]))
-        basic.append(rs)
-
         # Keypad Tone
         tmpkeypadtone = _mem.keypad_tone
         if tmpkeypadtone >= len(KEYPADTONE_LIST):
@@ -2051,40 +2084,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             ALARMMODE_LIST, ALARMMODE_LIST[tmpalarmmode]))
         basic.append(rs)
 
-        # Reminding of end of talk
-        tmpalarmmode = _mem.reminding_of_end_talk_ROGER
-        if tmpalarmmode >= len(REMENDOFTALK_LIST):
-            tmpalarmmode = 0
-        rs = RadioSetting(
-                "reminding_of_end_talk_ROGER",
-                "Reminding of end of talk (Roger)",
-                RadioSettingValueList(
-                    REMENDOFTALK_LIST,
-                    REMENDOFTALK_LIST[tmpalarmmode]))
-        basic.append(rs)
-
-        # Repeater tail tone elimination
-        tmprte = _mem.repeater_tail_elimination
-        if tmprte >= len(RTE_LIST):
-            tmprte = 0
-        rs = RadioSetting(
-                "repeater_tail_elimination",
-                "Repeater tail tone elimination",
-                RadioSettingValueList(RTE_LIST, RTE_LIST[tmprte]))
-        basic.append(rs)
-
-        # Logo string 1
-        logo1 = str(_mem.logo_line1).strip("\x20\x00\xff") + "\x00"
-        logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo1", "Logo string 1 (12 characters)",
-                          RadioSettingValueString(0, 12, logo1))
-        basic.append(rs)
-
-        # Logo string 2
-        logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
-        logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo2", "Logo string 2 (12 characters)",
-                          RadioSettingValueString(0, 12, logo2))
+        # squelch
+        tmpsq = _mem.squelch
+        if tmpsq > 9:
+            tmpsq = 1
+        rs = RadioSetting("squelch", "Squelch (Sql)",
+                          RadioSettingValueInteger(0, 9, tmpsq))
         basic.append(rs)
 
         tmpval = int(_mem.S0_S_meter_level_dbm)
@@ -2102,6 +2107,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           "S9_S_meter_level_dbm, this is minus value(-)",
                           RadioSettingValueInteger(0, 254, tmpval))
         basic.append(rs)        
+
         # FM radio
         for i in range(1, 21):
             freqname = "FM_"+str(i)
@@ -2132,12 +2138,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val.set_validate_callback(validate_int_flock)
         unlock.append(rs)
 
-        # 350TX
-        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX (Tx 350)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_350tx > 0)))
-        unlock.append(rs)
-
         # Killed
         rs = RadioSetting("int_KILLED", "KILLED DTMF CALLING (* SEE Driver Information if available) ",
                           RadioSettingValueBoolean(
@@ -2147,6 +2147,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX (Tx 200)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_200tx > 0)))
+        unlock.append(rs)
+
+        # 350TX
+        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX (Tx 350)",
+                          RadioSettingValueBoolean(
+                              bool(_mem.int_350tx > 0)))
         unlock.append(rs)
 
         # 500TX
@@ -2175,6 +2181,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             "Battery_type", "Battery Type (BatTyp)",
             RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
         unlock.append(rs)
+
         # readonly info
         # Firmware
         if self.FIRMWARE_VERSION == "":
@@ -2202,7 +2209,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("FONCTION_FMRADIO", "FONCTION FMRADIO", val)
         roinfo.append(rs)          
 
-         # NOAA       
+        # NOAA       
         val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
         val.set_mutable(False)
         rs = RadioSetting("FONCTION_NOAA", "FONCTION NOAA", val)
