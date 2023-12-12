@@ -2039,12 +2039,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         
         basic.append(rs)
       
-         def validate_int_flock( value):
-            if value==FLOCK_LIST[7]:
-                msg = value + " can only be enabled from radio menu"
-                raise InvalidValueError(msg)
-            return value
-              
+        def validate_int_flock( value):
+           if value==FLOCK_LIST[7]:
+               msg = value + " can only be enabled from radio menu"
+               raise InvalidValueError(msg)
+           return value
+          
  #       element.get_name() = "crossband"
  #       rs = RadioSettingValueList(
  #                   CROSSBAND_LIST,
