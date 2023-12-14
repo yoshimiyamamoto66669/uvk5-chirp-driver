@@ -406,7 +406,7 @@ VFO_CHANNEL_NAMES = ["F1(50M-76M)A", "F1(50M-76M)B",
                      "F6(400M-470M)A", "F6(400M-470M)B",
                      "F7(470M-600M)A", "F7(470M-600M)B"]
 
-SCANLIST_LIST = ["None", "1", "2", "1+2"]
+SCANLIST_LIST = ["None", "LIST1", "LIST2", "ALL"]
 
 SCANLIST_SELECT_LIST = ["LIST1", "LIST2", "ALL"]
 
@@ -1307,8 +1307,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # scanlist stuff
             if element.get_name() == "scanlist_default":
-                val = (int(element.value) == 2) and 1 or 0
-                _mem.scanlist_default = val
+                _mem.scanlist_default = SCANLIST_SELECT_LIST.index(
+                        str(element.value))
 
             if element.get_name() == "scanlist1_priority_scan":
                 _mem.scanlist1_priority_scan = \
