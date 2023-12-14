@@ -287,7 +287,7 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
 COMPILER_STATUS_LIST = ["DESABLE", "ENABLE"]
 
 # scrambler
-SCRAMBLER_LIST = ["off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+SCRAMBLER_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 # rx mode
 RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"] 
@@ -302,7 +302,7 @@ BATTYPE_LIST = ["1600_mAh", "2200_mAh"]
 # bat txt
 BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
 # Backlight auto mode
-BACKLIGHT_LIST = ["Off", "5s", "10s", "20s", "1min", "2min", "4min", "Always On"]
+BACKLIGHT_LIST = ["OFF", "5s", "10s", "20s", "1min", "2min", "4min", "Always On"]
 
 # Backlight LVL
 BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
@@ -310,7 +310,7 @@ BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
 # Crossband receiving/transmitting
-CROSSBAND_LIST = ["Off", "Band A", "Band B"]
+CROSSBAND_LIST = ["OFF", "Band A", "Band B"]
 DUALWATCH_LIST = CROSSBAND_LIST
 
 # steps
@@ -355,11 +355,11 @@ SCANRESUME_LIST = ["TO: Resume after 5 seconds",
                    "CO: Resume after signal dissapears",
                    "SE: Stop scanning after receiving a signal"]
 WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"] #joc: add "None"
-KEYPADTONE_LIST = ["Off", "Chinese", "English"]
+KEYPADTONE_LIST = ["OFF", "Chinese", "English"]
 
 ALARMMODE_LIST = ["SITE", "TONE"]
-REMENDOFTALK_LIST = ["Off", "ROGER", "MDC"]
-RTE_LIST = ["Off", "100ms", "200ms", "300ms", "400ms",
+REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
+RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
             "500ms", "600ms", "700ms", "800ms", "900ms"]
 
 MEM_SIZE = 0x2000  # size of all memory
@@ -917,7 +917,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # actually the step and duplex are overwritten by chirp based on
             # bandplan. they are here to document sane defaults for IARU r1
             # mem.tuning_step = 25.0
-            # mem.duplex = "off"
+            # mem.duplex = "OFF"
 
             return mem
 
@@ -988,13 +988,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         is_bclo = bool(_mem.bclo > 0)
         rs = RadioSetting("bclo", "BCLO", RadioSettingValueBoolean(is_bclo))
         mem.extra.append(rs)
-        tmpcomment += "BCLO:"+(is_bclo and "ON" or "off")+" "
+        tmpcomment += "BCLO:"+(is_bclo and "ON" or "OFF")+" "
 
         # Frequency reverse - whatever that means, don't see it in the manual
         is_frev = bool(_mem.freq_reverse > 0)
         rs = RadioSetting("frev", "FreqRev", RadioSettingValueBoolean(is_frev))
         mem.extra.append(rs)
-        tmpcomment += "FreqReverse:"+(is_frev and "ON" or "off")+" "
+        tmpcomment += "FreqReverse:"+(is_frev and "ON" or "OFF")+" "
 
         # PTTID
         pttid = _mem.dtmf_pttid
@@ -1008,7 +1008,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("dtmfdecode", "DTMF decode",
                           RadioSettingValueBoolean(is_dtmf))
         mem.extra.append(rs)
-        tmpcomment += "DTMFdecode:"+(is_dtmf and "ON" or "off")+" "
+        tmpcomment += "DTMFdecode:"+(is_dtmf and "ON" or "OFF")+" "
 
         # Scrambler
         if _mem.scrambler & 0x0f < len(SCRAMBLER_LIST):
@@ -1689,7 +1689,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpch > 200:
             tmpch = 0
         rs = RadioSetting("scanlist1_priority_ch1",
-                          "Scanlist 1 priority channel 1 (0 - off)",
+                          "Scanlist 1 priority channel 1 (0 - OFF)",
                           RadioSettingValueInteger(0, 200, tmpch))
         scanl.append(rs)
 
@@ -1697,7 +1697,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpch > 200:
             tmpch = 0
         rs = RadioSetting("scanlist1_priority_ch2",
-                          "Scanlist 1 priority channel 2 (0 - off)",
+                          "Scanlist 1 priority channel 2 (0 - OFF)",
                           RadioSettingValueInteger(0, 200, tmpch))
         scanl.append(rs)
 
@@ -1712,7 +1712,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpch > 200:
             tmpch = 0
         rs = RadioSetting("scanlist2_priority_ch1",
-                          "Scanlist 2 priority channel 1 (0 - off)",
+                          "Scanlist 2 priority channel 1 (0 - OFF)",
                           RadioSettingValueInteger(0, 200, tmpch))
         scanl.append(rs)
 
@@ -1720,7 +1720,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpch > 200:
             tmpch = 0
         rs = RadioSetting("scanlist2_priority_ch2",
-                          "Scanlist 2 priority channel 2 (0 - off)",
+                          "Scanlist 2 priority channel 2 (0 - OFF)",
                           RadioSettingValueInteger(0, 200, tmpch))
         scanl.append(rs)
 
@@ -2317,7 +2317,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         _mem.freq = mem.freq/10
         _mem.offset = mem.offset/10
 
-        if mem.duplex == "off" or mem.duplex == "":
+        if mem.duplex == "OFF" or mem.duplex == "":
             _mem.offset = 0
             _mem.shift = 0
         elif mem.duplex == '-':
