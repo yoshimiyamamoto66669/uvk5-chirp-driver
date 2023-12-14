@@ -17,7 +17,7 @@ Right now you have to:
 1. Restart CHIRP
 1. Go to menu `File`, `Load module...`
 1. Choose downloaded `uvk5_EGZUMER.py`, new radio will appear in Quansheng section in download/upload function.
-
+1. Important, go to menu `View` and turn ON `Show extra field`  this will show you more data programable in the `memoires` 
 # Current status
 
 ***This driver is work in progress... not finished yet...***
