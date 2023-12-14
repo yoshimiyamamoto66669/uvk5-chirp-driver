@@ -233,28 +233,29 @@ char name[8];
 char number[3];
 char unused_00[5];
 } dtmfcontact[16];
+
 #seekto 0x1FF0;
 struct {
-u8 ENABLE_FMRADIO:1, 
-   ENABLE_NOAA:1, 
-   ENABLE_VOICE:1, 
-   ENABLE_VOX:1, 
-   ENABLE_ALARM:1, 
+u8 ENABLE_DTMF_CALLING:1,
+   ENABLE_PWRON_PASSWORD:1,
    ENABLE_TX1750:1,
-   ENABLE_PWRON_PASSWORD:1, 
-   ENABLE_DTMF_CALLING:1; 
+   ENABLE_ALARM:1,
+   ENABLE_VOX:1,
+   ENABLE_VOICE:1,
+   ENABLE_NOAA:1,
+   ENABLE_FMRADIO:1;
 } Compiler_Option_1;
 
 #seekto 0x1FF1;
 struct {
-u8 ENABLE_FLASHLIGHT:1, 
-   ENABLE_WIDE_RX:1, 
-   ENABLE_BYP_RAW_DEMODULATORS:1, 
-   ENABLE_BLMIN_TMP_OFF:1, 
-   COMPILER_OPTION2_5:1, 
-   COMPILER_OPTION2_6:1, 
+u8 COMPILER_OPTION2_8:1, 
    COMPILER_OPTION2_7:1, 
-   COMPILER_OPTION2_8:1; 
+   COMPILER_OPTION2_6:1, 
+   COMPILER_OPTION2_5:1, 
+   ENABLE_BLMIN_TMP_OFF:1,
+   ENABLE_RAW_DEMODULATORS:1, 
+   ENABLE_WIDE_RX:1,  
+   ENABLE_FLASHLIGHT:1;
 } Compiler_Option_2;
 """
 # bits that we will save from the channel structure (mostly unknown)
@@ -282,6 +283,8 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
                      chirp_common.PowerLevel("Med",  watts=3.00),
                      chirp_common.PowerLevel("High", watts=5.00),
                      ]
+# Compiler Option
+COMPILER_STATUS_LIST = ["DESABLE", "ENABLE"]
 
 # scrambler
 SCRAMBLER_LIST = ["off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
@@ -404,6 +407,8 @@ VFO_CHANNEL_NAMES = ["F1(50M-76M)A", "F1(50M-76M)B",
                      "F7(470M-600M)A", "F7(470M-600M)B"]
 
 SCANLIST_LIST = ["None", "1", "2", "1+2"]
+
+SCANLIST_SELECT_LIST = ["LIST1", "LIST2", "ALL"]
 
 DTMF_CHARS = "0123456789ABCD*# "
 DTMF_CHARS_ID = "0123456789ABCDabcd"
@@ -879,7 +884,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 is_empty = True
             # scanlists
             if _mem3.is_scanlist1 > 0 and _mem3.is_scanlist2 > 0:
-                tmpscn = SCANLIST_LIST[3]  # "1+2"
+                tmpscn = SCANLIST_LIST[3]  # "ALL"
             elif _mem3.is_scanlist1 > 0:
                 tmpscn = SCANLIST_LIST[1]  # "1"
             elif _mem3.is_scanlist2 > 0:
@@ -1353,118 +1358,69 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if element.get_name() == "beep_keyM.keyM_longpress_action":
                 _mem.beep_keyM.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
-                                  
-            # compiler option 1 ENABLE_FMRADIO
+# compiler option 1 ENABLE_FMRADIO
             if element.get_name() == "Compiler_Option_1.ENABLE_FMRADIO":
                 _mem.Compiler_Option_1.ENABLE_FMRADIO = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_FMRADIO == 0:
-                   VALEUR_COMPILER = "DESABLE"
 
             # compiler option 2 ENABLE_NOAA
             if element.get_name() == "Compiler_Option_1.ENABLE_NOAA":
                 _mem.Compiler_Option_1.ENABLE_NOAA = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_NOAA == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option 3 ENABLE_VOICE
             if element.get_name() == "Compiler_Option_1.ENABLE_VOICE":
                 _mem.Compiler_Option_1.ENABLE_VOICE = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_VOICE == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option 4 ENABLE_VOX
             if element.get_name() == "Compiler_Option_1.ENABLE_VOX":
                 _mem.Compiler_Option_1.ENABLE_VOX = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_VOX == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option 5 ENABLE_ALARM
             if element.get_name() == "Compiler_Option_1.ENABLE_ALARM":
                 _mem.Compiler_Option_1.ENABLE_ALARM = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_ALARM == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option 6 ENABLE_TX1750
             if element.get_name() == "Compiler_Option_1.ENABLE_TX1750":
                 _mem.Compiler_Option_1.ENABLE_TX1750 = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_TX1750 == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
  
             # compiler option 6 ENABLE_PWRON_PASSWORD
             if element.get_name() == "Compiler_Option_1.ENABLE_PWRON_PASSWORD":
                 _mem.Compiler_Option_1.ENABLE_PWRON_PASSWORD = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_PWRON_PASSWORD == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
  
             # compiler option 7 ENABLE_DTMF_CALLING
             if element.get_name() == "Compiler_Option_1.ENABLE_DTMF_CALLING":
                 _mem.Compiler_Option_1.ENABLE_DTMF_CALLING = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_1.ENABLE_DTMF_CALLING == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
  
             # compiler option2 1 ENABLE_FLASHLIGHT
             if element.get_name() == "Compiler_Option_2.ENABLE_FLASHLIGHT":
                 _mem.Compiler_Option_2.ENABLE_FLASHLIGHT = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.ENABLE_FLASHLIGHT == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 2 ENABLE_WIDE_RX
             if element.get_name() == "Compiler_Option_2.ENABLE_WIDE_RX":
                 _mem.Compiler_Option_2.ENABLE_WIDE_RX = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.ENABLE_WIDE_RX == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 3 ENABLE_RAW_DEMODULATORS
             if element.get_name() == "Compiler_Option_2.ENABLE_RAW_DEMODULATORS":
                 _mem.Compiler_Option_2.ENABLE_RAW_DEMODULATORS = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.ENABLE_RAW_DEMODULATORS == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 4 ENABLE_BLMIN_TMP_OFF
             if element.get_name() == "Compiler_Option_2.ENABLE_BLMIN_TMP_OFF":
                 _mem.Compiler_Option_2.ENABLE_BLMIN_TMP_OFF = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.ENABLE_BLMIN_TMP_OFF == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 5 COMPILER_OPTION2_5
             if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_5":
                 _mem.Compiler_Option_2.COMPILER_OPTION2_5 = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.COMPILER_OPTION2_5 == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 6 COMPILER_OPTION2_6
             if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_6":
                 _mem.Compiler_Option_2.COMPILER_OPTION2_6 = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.COMPILER_OPTION2_6 == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 7 COMPILER_OPTION2_7
             if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_7":
                 _mem.Compiler_Option_2.COMPILER_OPTION2_7 = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.COMPILER_OPTION2_7 == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
             # compiler option2 8 COMPILER_OPTION2_8
             if element.get_name() == "Compiler_Option_2.COMPILER_OPTION2_8":
                 _mem.Compiler_Option_2.COMPILER_OPTION2_8 = element.value and 1 or 0
-                VALEUR_COMPILER = "ENABLE "
-                if _mem.Compiler_Option_2.COMPILER_OPTION2_8 == 0:
-                   VALEUR_COMPILER = "DESABLE"                 
 
     def get_settings(self):
         _mem = self._memobj
@@ -2197,101 +2153,102 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("driver_ver", "Driver version", val)
         roinfo.append(rs)
 
-        # FM RADIO        
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        # FM RADIO   
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_FMRADIO])    
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_FMRADIO", "FONCTION FMRADIO", val)
+        rs = RadioSetting("ENABLE_FMRADIO", "FONCTION FMRADIO", val )
         roinfo.append(rs)          
 
-        # NOAA       
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        # NOAA  
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_NOAA])    
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_NOAA", "FONCTION NOAA", val)
+        rs = RadioSetting("ENABLE_NOAA", "FONCTION NOAA", val)
         roinfo.append(rs)          
  
-        # VOICE
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        # VOICE        
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_VOICE])    
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_VOICE", "FONCTION VOICE", val)
+        rs = RadioSetting("ENABLE_VOICE", "FONCTION VOICE", val)
         roinfo.append(rs)          
  
         # VOX
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_VOX])     
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_VOX", "FONCTION VOX", val)
+        rs = RadioSetting("ENABLE_VOX", "FONCTION VOX", val)
         roinfo.append(rs)          
 
         # ALARM
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_ALARM]) 
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_ALARM", "FONCTION ALARM", val)
+        rs = RadioSetting("ENABLE_ALARM", "FONCTION ALARM", val)
         roinfo.append(rs)          
 
         # TX1750
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_TX1750]) 
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_TX1750", "FONCTION TX1750", val)
+        rs = RadioSetting("ENABLE_TX1750", "FONCTION TX1750", val)
         roinfo.append(rs)          
 
         # PWRON_PASSWORD
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_PWRON_PASSWORD]) 
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_PWRON_PASSWORD", "FONCTION PWRON PASSWORD", val)
+        rs = RadioSetting("ENABLE_PWRON_PASSWORD", "FONCTION PWRON PASSWORD", val)
         roinfo.append(rs)          
 
-        # TX1750
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        # dtmf calling
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_1.ENABLE_DTMF_CALLING]) 
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_DTMF_CALLING", "FONCTION DTMF CALLING", val)
+        rs = RadioSetting("ENABLE_DTMF_CALLING", "FONCTION DTMF CALLING", val)
         roinfo.append(rs)          
+        
         # FLASHLIGHT
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.ENABLE_FLASHLIGHT])
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_FLASHLIGHT", "FONCTION FLASHLIGHT", val)
+        rs = RadioSetting("ENABLE_FLASHLIGHT", "FONCTION FLASHLIGHT", val)
         roinfo.append(rs)          
 
         # WIDE_RX
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.ENABLE_WIDE_RX])
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_WIDE_RX", "FONCTION WIDE RX", val)
+        rs = RadioSetting("ENABLE_WIDE_RX", "FONCTION WIDE RX", val)
         roinfo.append(rs) 
 
         # RAW_DEMODULATORS
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.ENABLE_RAW_DEMODULATORS])
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_RAW_DEMODULATORS", "FONCTION RAW DEMODULATORS", val)
+        rs = RadioSetting("ENABLE_RAW_DEMODULATORS", "FONCTION RAW DEMODULATORS", val)
         roinfo.append(rs) 
                  
         # BLMIN_TMP_OFF
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.ENABLE_BLMIN_TMP_OFF])
         val.set_mutable(False)
-        rs = RadioSetting("FONCTION_BLMIN_TMP_OFF", "FONCTION BLMIN TMP OFF", val)
+        rs = RadioSetting("ENABLE_BLMIN_TMP_OFF", "FONCTION BLMIN TMP OFF", val)
         roinfo.append(rs) 
 
         # COMPILER_OPTION2_5
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_5])
         val.set_mutable(False)
         rs = RadioSetting("COMPILER_OPTION2_5", "COMPILER OPTION2 5", val)
         roinfo.append(rs) 
 
         # COMPILER_OPTION2_6
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_6])
         val.set_mutable(False)
         rs = RadioSetting("COMPILER_OPTION2_6", "COMPILER OPTION2 6", val)
         roinfo.append(rs) 
 
         # COMPILER_OPTION2_7
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_7])
         val.set_mutable(False)
         rs = RadioSetting("COMPILER_OPTION2_7", "COMPILER OPTION2 7", val)
         roinfo.append(rs) 
 
         # COMPILER_OPTION2_8
-        val = RadioSettingValueString(0, 128, VALEUR_COMPILER)
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LISTCOMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_8])
         val.set_mutable(False)
         rs = RadioSetting("COMPILER_OPTION2_8", "COMPILER OPTION2 8", val)
-        roinfo.append(rs)
-
+        roinfo.append(rs) 
+      
         return top
 
     # Store details about a high-level memory to the memory map
