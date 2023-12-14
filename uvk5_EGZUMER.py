@@ -2244,7 +2244,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         roinfo.append(rs) 
 
         # COMPILER_OPTION2_8
-        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LISTCOMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_8])
+        val = RadioSettingValueString(0, 128, COMPILER_STATUS_LIST[_mem.Compiler_Option_2.COMPILER_OPTION2_8])
         val.set_mutable(False)
         rs = RadioSetting("COMPILER_OPTION2_8", "COMPILER OPTION2 8", val)
         roinfo.append(rs) 
