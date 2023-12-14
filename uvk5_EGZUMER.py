@@ -1670,14 +1670,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             rs = RadioSetting(varnumname, varinumdescr, val)
             dtmfc.append(rs)
 
-        # scanlists
-        if _mem.scanlist_default == 1:
-            tmpsc = 2
-        else:
-            tmpsc = 1
+        tmpscanl = _mem.scanlist_default
         rs = RadioSetting("scanlist_default",
-                          "Default scanlist",
-                          RadioSettingValueInteger(1, 2, tmpsc))
+                          "Default scanlist (SList)",
+                          RadioSettingValueList(
+                                SCANLIST_SELECT_LIST,
+                                SCANLIST_SELECT_LIST[tmpscanl]))    
         scanl.append(rs)
 
         tmppr = bool((_mem.scanlist1_priority_scan & 1) > 0)
