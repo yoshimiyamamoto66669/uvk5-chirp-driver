@@ -44,3 +44,5 @@ stay to test the compiler version bitfield ... not yet implement in my firmware 
 
 12 dec 2023 : menu setting re arranged order to follow the radio menu order , when possible. 
  add a reference name in chirp for the menu in the radio in parenthese (****)  ex: backlight level min  (BlMin)
+
+14 dec 2023 : struct complier option change bitfield, scanlist menu change to follow radio name 
