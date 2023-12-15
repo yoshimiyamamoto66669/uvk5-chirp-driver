@@ -1,5 +1,10 @@
 # Introduction
 
+> [!WARNING]  
+This is a work in progress, very crude implementation right now, many functions are not working as they should. Be patient, when it is time this repo will open for reporting issues. Until then we are not interested in issues reports, we know they exist.
+If you just want to program channels use standard, built-in CHIRP driver for UV-K5, just don't open Settings tab, otherwise it will overvrite custom settings.
+If you are knowlegable enough and want to help post a PR.
+
 CHIRP driver for UV-K5/K6/5R radios running [Egzumer firmware](https://github.com/egzumer/uv-k5-firmware-custom)
 
 This is a modification of a driver created by:<br>
