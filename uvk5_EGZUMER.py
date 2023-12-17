@@ -1155,12 +1155,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.voice = VOICE_LIST.index(str(element.value))
 
             if element.get_name() == "S0_S_meter_level_dbm":
-                _mem.S0_S_meter_level_dbm = \
-                        int(int(element.value))
+                _mem.S0_S_meter_level_dbm = -int(element.value)
 
             if element.get_name() == "S9_S_meter_level_dbm":
-                _mem.S9_S_meter_level_dbm = \
-                        int(int(element.value))
+                _mem.S9_S_meter_level_dbm = -int(element.value)
             # Alarm mode
             if element.get_name() == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
@@ -1885,7 +1883,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # AM_fix
         rs = RadioSetting(
                 "Multi_option.Setting_AM_fix",
-                "AM Fix (AM Fix)",
+                "AM reception fix (AM Fix)",
                 RadioSettingValueBoolean(
                     bool(_mem.Multi_option.Setting_AM_fix > 0)))
         if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
@@ -1951,20 +1949,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueInteger(0, 9, tmpsq))
         basic.append(rs)
 
-        tmpval = int(_mem.S0_S_meter_level_dbm)
-        if tmpval == 255:
-            tmpval = 130
+        # S-meter
+        tmpS0 = -int(_mem.S0_S_meter_level_dbm)
+        tmpS9 = -int(_mem.S9_S_meter_level_dbm)
+        if tmpS0 > -90 or tmpS0 < -200 or tmpS9 > -50 or tmpS9 < -160:
+            tmpS0 = -200
+            tmpS9 = -160
         rs = RadioSetting("S0_S_meter_level_dbm",
-                          "S0_S_meter_level_dbm, this is minus value(-)",
-                          RadioSettingValueInteger(0, 254, tmpval))
+                          "S-meter S0 level [dBm]",
+                          RadioSettingValueInteger(-200, -90, tmpS0))
         basic.append(rs)
-
-        tmpval = int(_mem.S9_S_meter_level_dbm)
-        if tmpval == 255:
-            tmpval = 76
         rs = RadioSetting("S9_S_meter_level_dbm",
-                          "S9_S_meter_level_dbm, this is minus value(-)",
-                          RadioSettingValueInteger(0, 254, tmpval))
+                          "S-meter S9 level [dBm]",
+                          RadioSettingValueInteger(-160, -50, tmpS9))
         basic.append(rs)        
 
         # FM radio
