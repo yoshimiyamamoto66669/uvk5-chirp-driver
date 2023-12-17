@@ -151,7 +151,7 @@ u8 power_on_dispmode;
 u8 password[4];
 
 #seekto 0xea0;
-u8 keypad_tone;
+u8 voice;
 u8 S0_S_meter_level_dbm;
 u8 S9_S_meter_level_dbm;
 
@@ -300,7 +300,8 @@ BATTYPE_LIST = ["1600_mAh", "2200_mAh"]
 # bat txt
 BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
 # Backlight auto mode
-BACKLIGHT_LIST = ["OFF", "5s", "10s", "20s", "1min", "2min", "4min", "Always On"]
+BACKLIGHT_LIST = ["OFF", "5s", "10s", "20s", "1min", "2min", "4min",
+                  "Always On"]
 
 # Backlight LVL
 BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
@@ -308,8 +309,9 @@ BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
 
-# steps
-STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25, 15, 30, 50, 100, 125, 250, 500]
+# steps TODO: change order
+STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25,
+         15, 30, 50, 100, 125, 250, 500]
 
 # ctcss/dcs codes
 TMODES = ["", "Tone", "DTCS", "DTCS"]
@@ -330,7 +332,7 @@ CTCSS_TONES = [
 ]
 
 # lifted from ft4.py
-DTCS_CODES = [
+DTCS_CODES = [ # TODO: add negative codes
     23,  25,  26,  31,  32,  36,  43,  47,  51,  53,  54,
     65,  71,  72,  73,  74,  114, 115, 116, 122, 125, 131,
     132, 134, 143, 145, 152, 155, 156, 162, 165, 172, 174,
@@ -344,13 +346,14 @@ DTCS_CODES = [
 ]
 
 # flock list extended 
-FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "Disable All", "Unlock All"] #joc: add extra parameter 
+FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "Disable All", # TODO: change names
+              "Unlock All"]
 
 SCANRESUME_LIST = ["TO: Resume after 5 seconds",
                    "CO: Resume after signal dissapears",
                    "SE: Stop scanning after receiving a signal"]
-WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"] #joc: add "None"
-KEYPADTONE_LIST = ["OFF", "Chinese", "English"]
+WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"]
+VOICE_LIST = ["OFF", "Chinese", "English"]
 
 ALARMMODE_LIST = ["SITE", "TONE"]
 REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
@@ -1141,8 +1144,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.power_on_dispmode = WELCOME_LIST.index(str(element.value))
 
             # Keypad Tone
-            if element.get_name() == "keypad_tone":
-                _mem.keypad_tone = KEYPADTONE_LIST.index(str(element.value))
+            if element.get_name() == "voice":
+                _mem.voice = VOICE_LIST.index(str(element.value))
 
             if element.get_name() == "S0_S_meter_level_dbm":
                 _mem.S0_S_meter_level_dbm = \
@@ -1669,14 +1672,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Keypad locked
         rs = RadioSetting(
                 "key_lock",
-                "Keypad lock (KeyLck)",
+                "Keypad lock",
                 RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
         basic.append(rs)
 
         # Auto keypad lock
         rs = RadioSetting(
                 "auto_keypad_lock",
-                "Auto keypad lock",
+                "Auto keypad lock (KeyLck)",
                 RadioSettingValueBoolean(bool(_mem.auto_keypad_lock > 0)))
         basic.append(rs)
 
@@ -1686,7 +1689,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmptot = 10
         rs = RadioSetting(
                 "tot",
-                "Max talk time [min] (TxTout)",
+                "Max talk time (TxTout) [min]",
                 RadioSettingValueInteger(0, 10, tmptot))
         basic.append(rs)
 
@@ -1895,12 +1898,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     SCANRESUME_LIST,
                     SCANRESUME_LIST[tmpscanres]))
         basic.append(rs)
-        # Keypad Tone
-        tmpkeypadtone = _mem.keypad_tone
-        if tmpkeypadtone >= len(KEYPADTONE_LIST):
-            tmpkeypadtone = 0
-        rs = RadioSetting("keypad_tone", "Keypad tone", RadioSettingValueList(
-            KEYPADTONE_LIST, KEYPADTONE_LIST[tmpkeypadtone]))
+
+        # Voice
+        tmpvoice = _mem.voice
+        if tmpvoice >= len(VOICE_LIST):
+            tmpvoice = 0
+        rs = RadioSetting("voice", "Voice", RadioSettingValueList(
+            VOICE_LIST, VOICE_LIST[tmpvoice]))
         basic.append(rs)
 
         # Alarm mode
