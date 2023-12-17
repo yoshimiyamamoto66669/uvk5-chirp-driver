@@ -61,24 +61,23 @@ MEM_FORMAT = """
 struct {
   ul32 freq;
   ul32 offset;
+
+// 0x08
   u8 rxcode;
   u8 txcode;
 
+// 0x0A
   u8 unknown1:2,
   txcodeflag:2,
   unknown2:2,
   rxcodeflag:2;
 
-  //u8 flags1;
-  u8 flags1_unknown7:1,
-  flags1_unknown6:1,
-  flags1_unknown5:1,
-  enable_am:1,
-  flags1_unknown3:1,
-  is_in_scanlist:1,
+// 0x0B
+  u8 enable_am:1,
+  __UNUSED:2,
   shift:2;
 
-  //u8 flags2;
+// 0x0C
   u8 flags2_unknown7:1,
   flags2_unknown6:1,
   flags2_unknown5:1,
@@ -2176,10 +2175,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.dtmf_pttid = PTTID_LIST.index(svalue)
 
             if sname == "frev":
-                _mem.freq_reverse = svalue and 1 or 0
+                _mem.freq_reverse = bool(svalue)
 
             if sname == "dtmfdecode":
-                _mem.dtmf_decode = svalue and 1 or 0
+                _mem.dtmf_decode = bool(svalue)
 
             if sname == "scrambler":
                 _mem.scrambler = (
