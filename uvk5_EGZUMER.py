@@ -81,7 +81,7 @@ struct {
   u8 flags2_unknown7:1,
   flags2_unknown6:1,
   flags2_unknown5:1,
-  bclo:1,
+  busyChLockout:1,
   txpower:2,
   bandwidth:1,
   freq_reverse:1;
@@ -900,7 +900,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # set some sane defaults:
             mem.power = UVK5_POWER_LEVELS[2]
             mem.extra = RadioSettingGroup("Extra", "extra")
-            rs = RadioSetting("bclo", "BCLO", RadioSettingValueBoolean(False))
+            rs = RadioSetting("busyChLockout", "BusyCL", RadioSettingValueBoolean(False))
             mem.extra.append(rs)
             rs = RadioSetting("frev", "FreqRev",
                               RadioSettingValueBoolean(False))
@@ -989,11 +989,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         mem.extra = RadioSettingGroup("Extra", "extra")
 
-        # BCLO
-        is_bclo = bool(_mem.bclo > 0)
-        rs = RadioSetting("bclo", "BCLO", RadioSettingValueBoolean(is_bclo))
+        # BusyCL
+        is_bclo = bool(_mem.busyChLockout)
+        rs = RadioSetting("busyChLockout", "BusyCL", RadioSettingValueBoolean(is_bclo))
         mem.extra.append(rs)
-        tmpcomment += "BCLO:"+(is_bclo and "ON" or "OFF")+" "
+        tmpcomment += "BusyCL:"+(is_bclo and "ON" or "OFF")+" "
 
         # Frequency reverse - whatever that means, don't see it in the manual
         is_frev = bool(_mem.freq_reverse > 0)
@@ -2168,8 +2168,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             sname = setting.get_name()
             svalue = setting.value.get_value()
 
-            if sname == "bclo":
-                _mem.bclo = svalue and 1 or 0
+            if sname == "busyChLockout":
+                _mem.busyChLockout = bool(svalue)
 
             if sname == "pttid":
                 _mem.dtmf_pttid = PTTID_LIST.index(svalue)
