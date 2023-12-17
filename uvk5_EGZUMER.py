@@ -1953,7 +1953,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
 
         # VFO open
-        rs = RadioSetting("vfo_open", "VFO open",
+        rs = RadioSetting("vfo_open", "Disable frequency mode",
                           RadioSettingValueBoolean(bool(_mem.vfo_open > 0)))
         basic.append(rs)
 
