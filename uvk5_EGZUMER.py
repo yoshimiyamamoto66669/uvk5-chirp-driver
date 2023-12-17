@@ -73,7 +73,7 @@ struct {
   rxcodeflag:2;
 
 // 0x0B
-  u8 enable_am:1,
+  u8 modulation:4,
   __UNUSED:2,
   shift:2;
 
@@ -721,7 +721,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                                 "->Tone", "->DTCS", "DTCS->", "DTCS->DTCS"]
 
         rf.valid_characters = chirp_common.CHARSET_ASCII
-        rf.valid_modes = ["FM", "NFM", "AM", "NAM", "USB", "NUSB"]
+        rf.valid_modes = ["FM", "NFM", "AM", "NAM", "USB"]
         rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
 
         rf.valid_skips = [""]
@@ -955,17 +955,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         self._get_tone(mem, _mem)
 
         # mode
-        if _mem.enable_am > 0:
-            if _mem.bandwidth > 0:
-                mem.mode = "NAM"
-            else:
-                mem.mode = "AM"
-        else:
-            if _mem.bandwidth > 0:
-                mem.mode = "NFM"
-            else:
-                mem.mode = "FM"
-
+        tempModes = self.get_features().valid_modes
+        tempModul = _mem.modulation*2 + _mem.bandwidth
+        if tempModul < len(tempModes):
+            mem.mode = tempModes[tempModul]
+        elif tempModul == 5: # USB with narrow setting
+            mem.mode = tempModes[4]
+        elif tempModul >= len(tempModes):
+            mem.mode = "UNSUPPORTED BY CHIRP"
+        
         # tuning step
         tstep = _mem.step & 0x7
         if tstep < len(STEPS):
@@ -2114,18 +2112,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         band = _find_band(self, mem.freq)
 
         # mode
-        if mem.mode == "NFM":
-            _mem.bandwidth = 1
-            _mem.enable_am = 0
-        elif mem.mode == "FM":
-            _mem.bandwidth = 0
-            _mem.enable_am = 0
-        elif mem.mode == "NAM":
-            _mem.bandwidth = 1
-            _mem.enable_am = 1
-        elif mem.mode == "AM":
-            _mem.bandwidth = 0
-            _mem.enable_am = 1
+        tmpMode = self.get_features().valid_modes.index(mem.mode)
+        _mem.modulation = tmpMode / 2
+        _mem.bandwidth = tmpMode % 2
+        if mem.mode == "USB":
+            _mem.bandwidth = 1 # narrow
 
         # frequency/offset
         _mem.freq = mem.freq/10
