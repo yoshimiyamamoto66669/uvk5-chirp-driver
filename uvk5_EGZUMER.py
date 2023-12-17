@@ -57,7 +57,7 @@ DRIVER_VERSION = "Quansheng UV-K5 driver v20230626 (c) Jacek Lipkowski SQ5BPF"
 VALEUR_COMPILER = "ENABLE"
 
 MEM_FORMAT = """
-#seekto 0x0000;
+//#seekto 0x0000;
 struct {
   ul32 freq;
   ul32 offset;
@@ -78,34 +78,28 @@ struct {
   shift:2;
 
 // 0x0C
-  u8 flags2_unknown7:1,
-  flags2_unknown6:1,
-  flags2_unknown5:1,
+  u8 __UNUSED1:3,
   busyChLockout:1,
   txpower:2,
   bandwidth:1,
   freq_reverse:1;
 
-  //u8 dtmf_flags;
-  u8 dtmf_flags_unknown7:1,
-  dtmf_flags_unknown6:1,
-  dtmf_flags_unknown5:1,
-  dtmf_flags_unknown4:1,
-  dtmf_flags_unknown3:1,
-  dtmf_pttid:2,
+  // 0x0D
+  u8 __UNUSED2:4,
+  dtmf_pttid:3,
   dtmf_decode:1;
 
-
+  // 0x0E
   u8 step;
   u8 scrambler;
+
 } channel[214];
 
-#seekto 0xd60;
+//#seekto 0xd60;
 struct {
 u8 is_scanlist1:1,
 is_scanlist2:1,
-unknown1:1,
-unknown2:1,
+compander:2,
 is_free:1,
 band:3;
 } channel_attributes[200];
@@ -165,7 +159,7 @@ u8 Battery_type;
 char logo_line1[16];
 char logo_line2[16];
 
-#seekto 0xed0;
+//#seekto 0xed0;
 struct {
 u8 side_tone;
 char separate_code;
@@ -192,7 +186,7 @@ char dtmf_up_code[16];
 char dtmf_down_code[16];
 } dtmf_settings_numbers;
 
-#seekto 0xf18;
+//#seekto 0xf18;
 u8 scanlist_default;
 u8 scanlist1_priority_scan;
 u8 scanlist1_priority_ch1;
@@ -254,11 +248,9 @@ u8 __UNUSED:3,
 """
 # bits that we will save from the channel structure (mostly unknown)
 SAVE_MASK_0A = 0b11001100
-SAVE_MASK_0B = 0b11101100
+SAVE_MASK_0B = 0b00001100
 SAVE_MASK_0C = 0b11100000
-SAVE_MASK_0D = 0b11111000
-SAVE_MASK_0E = 0b11110001
-SAVE_MASK_0F = 0b11110000
+SAVE_MASK_0D = 0b11110000
 
 # flags1
 FLAGS1_OFFSET_NONE = 0b00
@@ -282,9 +274,9 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
 SCRAMBLER_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 # rx mode
-RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"] 
+RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"]
 # channel display mode
-CHANNELDISP_LIST = ["Freq", "Channel Number", "Name", "Name + Freq"] #joc modif to fit more with radio display
+CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Freqency"]
 
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
@@ -409,7 +401,7 @@ VFO_CHANNEL_NAMES = ["F1(50M-76M)A", "F1(50M-76M)B",
                      "F6(400M-470M)A", "F6(400M-470M)B",
                      "F7(470M-600M)A", "F7(470M-600M)B"]
 
-SCANLIST_LIST = ["None", "LIST1", "LIST2", "ALL"]
+SCANLIST_LIST = ["None", "List1", "List2", "Both"]
 
 SCANLIST_SELECT_LIST = ["LIST1", "LIST2", "ALL"]
 
@@ -879,21 +871,16 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if (_mem.freq == 0xffffffff) or (_mem.freq == 0):
             is_empty = True
 
-        tmpscn = SCANLIST_LIST[0]
-
         # We'll also look at the channel attributes if a memory has them
+        tmpscn = SCANLIST_LIST[0]
         if number < 200:
             _mem3 = self._memobj.channel_attributes[number]
             # free memory bit
-            if _mem3.is_free > 0:
+            if _mem3.is_free:
                 is_empty = True
             # scanlists
-            if _mem3.is_scanlist1 > 0 and _mem3.is_scanlist2 > 0:
-                tmpscn = SCANLIST_LIST[3]  # "ALL"
-            elif _mem3.is_scanlist1 > 0:
-                tmpscn = SCANLIST_LIST[1]  # "1"
-            elif _mem3.is_scanlist2 > 0:
-                tmpscn = SCANLIST_LIST[2]  # "2"
+            tempVal = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
+            tmpscn = SCANLIST_LIST[tempVal]
 
         if is_empty:
             mem.empty = True
@@ -989,19 +976,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # BusyCL
         is_bclo = bool(_mem.busyChLockout)
-        rs = RadioSetting("busyChLockout", "BusyCL", RadioSettingValueBoolean(is_bclo))
+        rs = RadioSetting("busyChLockout", "Busy Ch Lockout", RadioSettingValueBoolean(is_bclo))
         mem.extra.append(rs)
         tmpcomment += "BusyCL:"+(is_bclo and "ON" or "OFF")+" "
 
         # Frequency reverse - whatever that means, don't see it in the manual
         is_frev = bool(_mem.freq_reverse > 0)
-        rs = RadioSetting("frev", "FreqRev", RadioSettingValueBoolean(is_frev))
+        rs = RadioSetting("frev", "Reverse Frequencies", RadioSettingValueBoolean(is_frev))
         mem.extra.append(rs)
         tmpcomment += "FreqReverse:"+(is_frev and "ON" or "OFF")+" "
 
         # PTTID
         pttid = _mem.dtmf_pttid
-        rs = RadioSetting("pttid", "PTTID", RadioSettingValueList(
+        rs = RadioSetting("pttid", "PTT ID", RadioSettingValueList(
             PTTID_LIST, PTTID_LIST[pttid]))
         mem.extra.append(rs)
         tmpcomment += "PTTid:"+PTTID_LIST[pttid]+" "
@@ -2077,8 +2064,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem2.set_raw("\xFF" * 16)
                 _mem4.channel_attributes[number].is_scanlist1 = 0
                 _mem4.channel_attributes[number].is_scanlist2 = 0
-                _mem4.channel_attributes[number].unknown1 = 0
-                _mem4.channel_attributes[number].unknown2 = 0
+                _mem4.channel_attributes[number].compander = 0
                 _mem4.channel_attributes[number].is_free = 1
                 _mem4.channel_attributes[number].band = 0x7
             return mem
@@ -2094,17 +2080,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             prev_0b = _mem.get_raw(asbytes=True)[0x0b] & SAVE_MASK_0B
             prev_0c = _mem.get_raw(asbytes=True)[0x0c] & SAVE_MASK_0C
             prev_0d = _mem.get_raw(asbytes=True)[0x0d] & SAVE_MASK_0D
-            prev_0e = _mem.get_raw(asbytes=True)[0x0e] & SAVE_MASK_0E
-            prev_0f = _mem.get_raw(asbytes=True)[0x0f] & SAVE_MASK_0F
-            _mem.set_raw("\x00" * 10 +
+            _mem.set_raw(bytes("\x00" * 10 +
                          chr(prev_0a) + chr(prev_0b) + chr(prev_0c) +
-                         chr(prev_0d) + chr(prev_0e) + chr(prev_0f))
+                         chr(prev_0d) + chr(0) + chr(0), "utf-8"))
 
         if number < 200:
             _mem4.channel_attributes[number].is_scanlist1 = 0
             _mem4.channel_attributes[number].is_scanlist2 = 0
-            _mem4.channel_attributes[number].unknown1 = 0
-            _mem4.channel_attributes[number].unknown2 = 0
+            _mem4.channel_attributes[number].compander = 0
             _mem4.channel_attributes[number].is_free = 1
             _mem4.channel_attributes[number].band = 0x7
 
@@ -2176,17 +2159,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     _mem.scrambler & 0xf0) | SCRAMBLER_LIST.index(svalue)
 
             if number < 200 and sname == "scanlists":
-                if svalue == "1":
-                    _mem4.channel_attributes[number].is_scanlist1 = 1
-                    _mem4.channel_attributes[number].is_scanlist2 = 0
-                elif svalue == "2":
-                    _mem4.channel_attributes[number].is_scanlist1 = 0
-                    _mem4.channel_attributes[number].is_scanlist2 = 1
-                elif svalue == "1+2":
-                    _mem4.channel_attributes[number].is_scanlist1 = 1
-                    _mem4.channel_attributes[number].is_scanlist2 = 1
-                else:
-                    _mem4.channel_attributes[number].is_scanlist1 = 0
-                    _mem4.channel_attributes[number].is_scanlist2 = 0
+                tmpVal = SCANLIST_LIST.index(svalue)
+                _mem4.channel_attributes[number].is_scanlist1 = bool(tmpVal & 1)
+                _mem4.channel_attributes[number].is_scanlist2 = bool(tmpVal & 2)
 
         return mem
