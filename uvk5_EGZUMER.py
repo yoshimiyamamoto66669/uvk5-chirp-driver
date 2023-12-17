@@ -706,9 +706,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rf.valid_power_levels = UVK5_POWER_LEVELS
         rf.valid_special_chans = list(SPECIALS.keys())
 
-        # hack so we can input any frequency,
-        # the 0.1 and 0.01 steps don't work unfortunately
-        rf.valid_tuning_steps = [0.01, 0.1, 1.0] + STEPS
+        rf.valid_tuning_steps = STEPS
 
         rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
         rf.valid_cross_modes = ["Tone->Tone", "Tone->DTCS", "DTCS->Tone",
