@@ -309,9 +309,6 @@ BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
-# Crossband receiving/transmitting
-CROSSBAND_LIST = ["OFF", "Band A", "Band B"]
-DUALWATCH_LIST = CROSSBAND_LIST
 
 # steps
 STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25, 15, 30, 50, 100, 125, 250, 500]
@@ -1068,16 +1065,17 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.channel_display_mode = CHANNELDISP_LIST.index(
                     str(element.value))
 
-            # Crossband receiving/transmitting
-            if element.get_name() == "crossband":
-                _mem.crossband = CROSSBAND_LIST.index(str(element.value))
-                              
+            # RX Mode
+            if element.get_name() == "rx_mode":
+                tmptxmode = RXMODE_LIST.index(str(element.value))
+                tmpmainvfo = _mem.TX_VFO + 1
+                _mem.crossband = tmpmainvfo * bool(tmptxmode & 0b10)
+                _mem.dual_watch = tmpmainvfo * bool(tmptxmode & 0b01)  
+
             # Battery Save
             if element.get_name() == "battery_save":
                 _mem.battery_save = BATSAVE_LIST.index(str(element.value))
-            # Dual Watch
-            if element.get_name() == "dualwatch":
-                _mem.dual_watch = DUALWATCH_LIST.index(str(element.value))
+
 
             # RX_MODE
             if element.get_name() == "RXMODE":
@@ -1930,6 +1928,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 RadioSettingValueBoolean(
                     bool(_mem.Multi_option.Setting_AM_fix > 0)))
         basic.append(rs)
+
         # VOX switch
         rs = RadioSetting(
                 "vox_switch",
@@ -1945,59 +1944,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueInteger(1, 10, tmpvox))
         basic.append(rs)
 
-        # Crossband receiving/transmitting
-        tmpcross = _mem.crossband
-        if tmpcross >= len(CROSSBAND_LIST):
-            tmpcross = 0
-        rs = RadioSetting(
-        	    "crossband",
-                "Cross-band receiving/transmitting, (link with Dual Watch for RXMODE)",
-                RadioSettingValueList(
-                    CROSSBAND_LIST,
-                    CROSSBAND_LIST[tmpcross]))
-        basic.append(rs)
-
-        # Dual watch
-        tmpdual = _mem.dual_watch
-        if tmpdual >= len(DUALWATCH_LIST):
-            tmpdual = 0
-        rs = RadioSetting(
-        	    "dualwatch",
-        	    "Dual Watch, (link with Cross-band for RXMODE)", 
-                RadioSettingValueList(
-                    DUALWATCH_LIST,
-                    DUALWATCH_LIST[tmpdual]))
-        basic.append(rs)
-
         # RX_MODE
-
-        tmprxmode = 0 #joc test
+        tmprxmode = (bool(_mem.crossband) << 1) + bool(_mem.dual_watch)
         if tmprxmode >= len(RXMODE_LIST):
             tmprxmode = 0
-        rs = RadioSetting("RxMode", "RX Mode (RxMode)", RadioSettingValueList(
+        rs = RadioSetting("rx_mode", "RX Mode (RxMode)", RadioSettingValueList(
             RXMODE_LIST, RXMODE_LIST[tmprxmode]))
-        if rs == 0 :   # Main only - CB off, DW off            
-           _mem.crossband = 0
-           _mem.dual_watch = 0
-
-        elif rs == 1 : # Crossband - CB on, DW off  
-           _mem.crossband = 1
-           _mem.dual_watch = 0
-
-        elif rs == 2 : # Dual rx respond - CB off, DW on   
-           _mem.crossband = 0
-           _mem.dual_watch = 1
-        else :   # Main tx dual rx - CB on, DW on 
-           _mem.crossband = 1
-           _mem.dual_watch = 1                   
-        
         basic.append(rs)
-          
- #       element.get_name() = "crossband"
- #       rs = RadioSettingValueList(
- #                   CROSSBAND_LIST,
- #                   CROSSBAND_LIST[_mem.crossband]))
- #       basic.append(rs)                   
 
         # VFO open
         rs = RadioSetting("vfo_open", "VFO open",
