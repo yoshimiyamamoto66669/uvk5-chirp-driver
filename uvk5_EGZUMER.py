@@ -365,8 +365,18 @@ FMMIN = 76.0
 FMMAX = 108.0
 
 # bands supported by the UV-K5
-BANDS = {
-        0: [18.0, 76.0],
+BANDS_STANDARD = {
+        0: [ 50.0, 76.0],
+        1: [108.0, 135.9999],
+        2: [136.0, 199.9990],
+        3: [200.0, 299.9999],
+        4: [350.0, 399.9999],
+        5: [400.0, 469.9999],
+        6: [470.0, 600.0]
+        }
+
+BANDS_WIDE = {
+        0: [ 18.0, 108.0],
         1: [108.0, 135.9999],
         2: [136.0, 199.9990],
         3: [200.0, 299.9999],
@@ -647,6 +657,7 @@ def do_upload(radio):
 
 def _find_band(self, hz):
     mhz = hz/1000000.0
+    BANDS = BANDS_WIDE if self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX else BANDS_STANDARD
     for a in BANDS:
         if mhz >= BANDS[a][0] and mhz <= BANDS[a][1]:
             return a
@@ -725,6 +736,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         #                  (840000000, 1300000000)
         #                  ]
         rf.valid_bands = []
+        BANDS = BANDS_WIDE if self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX else BANDS_STANDARD
         for a in BANDS:
             rf.valid_bands.append(
                     (int(BANDS[a][0]*1000000), int(BANDS[a][1]*1000000)))
@@ -1897,7 +1909,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
 
         # VFO open
-        rs = RadioSetting("vfo_open", "Disable frequency mode",
+        rs = RadioSetting("vfo_open", "Enable frequency mode",
                           RadioSettingValueBoolean(bool(_mem.vfo_open > 0)))
         basic.append(rs)
 
