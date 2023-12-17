@@ -271,8 +271,10 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
                      ]
 
 # scrambler
-SCRAMBLER_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-
+SCRAMBLER_LIST = ["OFF", "2600Hz", "2700", "2800Hz", "2900Hz", "3000Hz",
+                   "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
+# compander
+COMPANDER_LIST = ["OFF", "TX", "RX", "TX/RX"]
 # rx mode
 RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"]
 # channel display mode
@@ -873,6 +875,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # We'll also look at the channel attributes if a memory has them
         tmpscn = SCANLIST_LIST[0]
+        tmpComp = COMPANDER_LIST[0]
         if number < 200:
             _mem3 = self._memobj.channel_attributes[number]
             # free memory bit
@@ -881,6 +884,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # scanlists
             tempVal = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
             tmpscn = SCANLIST_LIST[tempVal]
+            tmpComp = COMPANDER_LIST[_mem3.compander]
 
         if is_empty:
             mem.empty = True
@@ -889,17 +893,26 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             mem.extra = RadioSettingGroup("Extra", "extra")
             rs = RadioSetting("busyChLockout", "BusyCL", RadioSettingValueBoolean(False))
             mem.extra.append(rs)
+
             rs = RadioSetting("frev", "FreqRev",
                               RadioSettingValueBoolean(False))
             mem.extra.append(rs)
+
             rs = RadioSetting("pttid", "PTTID", RadioSettingValueList(
                 PTTID_LIST, PTTID_LIST[0]))
             mem.extra.append(rs)
+
             rs = RadioSetting("dtmfdecode", "DTMF decode",
                               RadioSettingValueBoolean(False))
-            mem.extra.append(rs)
+            if self._memobj.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+                mem.extra.append(rs)
+
             rs = RadioSetting("scrambler", "Scrambler", RadioSettingValueList(
                 SCRAMBLER_LIST, SCRAMBLER_LIST[0]))
+            mem.extra.append(rs)
+
+            rs = RadioSetting("compander", "Compander", RadioSettingValueList(
+                COMPANDER_LIST, COMPANDER_LIST[0]))
             mem.extra.append(rs)
 
             rs = RadioSetting("scanlists", "Scanlists", RadioSettingValueList(
@@ -998,18 +1011,20 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("dtmfdecode", "DTMF decode",
                           RadioSettingValueBoolean(is_dtmf))
         mem.extra.append(rs)
-        tmpcomment += "DTMFdecode:"+(is_dtmf and "ON" or "OFF")+" "
+        tmpcomment += "DTMFdecode:"+(is_dtmf and "ON" or "OFF") + " "
 
         # Scrambler
-        if _mem.scrambler & 0x0f < len(SCRAMBLER_LIST):
-            enc = _mem.scrambler & 0x0f
-        else:
-            enc = 0
-
+        enc = _mem.scrambler if _mem.scrambler < len(SCRAMBLER_LIST) else 0
         rs = RadioSetting("scrambler", "Scrambler (Scramb)", RadioSettingValueList(
             SCRAMBLER_LIST, SCRAMBLER_LIST[enc]))
         mem.extra.append(rs)
-        tmpcomment += "Scrambler:"+SCRAMBLER_LIST[enc]+" "
+        tmpcomment += "Scrambler:" + SCRAMBLER_LIST[enc] + " "
+
+        # Compander
+        rs = RadioSetting("compander", "Compander (Compnd)", RadioSettingValueList(
+            COMPANDER_LIST, tmpComp))
+        mem.extra.append(rs)
+        tmpcomment += "Compander:" + tmpComp + " "
 
         rs = RadioSetting("scanlists", "Scanlists (SList)", RadioSettingValueList(
             SCANLIST_LIST, tmpscn))
@@ -2010,11 +2025,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                               bool(_mem.int_350en > 0)))
         unlock.append(rs)
 
-        # SCREEN
-        rs = RadioSetting("int_scren", "SCREN - scrambler enable (ScraEn)",
+        # Scrambler enable
+        rs = RadioSetting("int_scren", "Scrambler enable (ScraEn)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_scren > 0)))
         unlock.append(rs)
+
+
 
         # Battery Type
         tmpbtype = _mem.Battery_type
@@ -2155,9 +2172,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.dtmf_decode = bool(svalue)
 
             if sname == "scrambler":
-                _mem.scrambler = (
-                    _mem.scrambler & 0xf0) | SCRAMBLER_LIST.index(svalue)
-
+                _mem.scrambler = SCRAMBLER_LIST.index(svalue)
+                
+            if sname == "compander":
+                _mem4.channel_attributes[number].compander = \
+                    COMPANDER_LIST.index(svalue)
+                
             if number < 200 and sname == "scanlists":
                 tmpVal = SCANLIST_LIST.index(svalue)
                 _mem4.channel_attributes[number].is_scanlist1 = bool(tmpVal & 1)
