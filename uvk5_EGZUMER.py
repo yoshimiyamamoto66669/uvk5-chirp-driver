@@ -244,19 +244,14 @@ u8 ENABLE_DTMF_CALLING:1,
    ENABLE_VOICE:1,
    ENABLE_NOAA:1,
    ENABLE_FMRADIO:1;
-} Compiler_Option_1;
-
-#seekto 0x1FF1;
-struct {
-u8 COMPILER_OPTION2_8:1, 
-   COMPILER_OPTION2_7:1, 
-   COMPILER_OPTION2_6:1, 
-   COMPILER_OPTION2_5:1, 
+u8 __UNUSED:3,
+   ENABLE_AM_FIX:1,
    ENABLE_BLMIN_TMP_OFF:1,
-   ENABLE_RAW_DEMODULATORS:1, 
-   ENABLE_WIDE_RX:1,  
+   ENABLE_RAW_DEMODULATORS:1,
+   ENABLE_WIDE_RX:1,
    ENABLE_FLASHLIGHT:1;
-} Compiler_Option_2;
+} BUILD_OPTIONS;
+
 """
 # bits that we will save from the channel structure (mostly unknown)
 SAVE_MASK_0A = 0b11001100
@@ -1368,10 +1363,18 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         fmradio = RadioSettingGroup("fmradio", "FM Radio")
 
         roinfo = RadioSettingGroup("roinfo", "Driver information")
+        top = RadioSettings()
+        top.append(basic)
+        top.append(keya)
+        top.append(dtmf)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            top.append(dtmfc)
+        top.append(scanl)
+        top.append(unlock)
+        if _mem.BUILD_OPTIONS.ENABLE_FMRADIO:
+            top.append(fmradio)
+        top.append(roinfo)
 
-        top = RadioSettings(
-                basic, keya, dtmf, dtmfc, scanl, unlock, fmradio, roinfo)
-           
         # Programmable keys
         tmpval = int(_mem.key1_shortpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
@@ -1426,7 +1429,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueString(1, 1, tmpval)
         val.set_charset(DTMF_CODE_CHARS)
         rs = RadioSetting("dtmf_separate_code", "Separate Code", val)
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = str(_mem.dtmf_settings.group_call_code)
         if tmpval not in DTMF_CODE_CHARS:
@@ -1434,7 +1438,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueString(1, 1, tmpval)
         val.set_charset(DTMF_CODE_CHARS)
         rs = RadioSetting("dtmf_group_call_code", "Group Call Code", val)
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = _mem.dtmf_settings.decode_response
         if tmpval >= len(DTMF_DECODE_RESPONSE_LIST):
@@ -1443,7 +1448,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueList(
                               DTMF_DECODE_RESPONSE_LIST,
                               DTMF_DECODE_RESPONSE_LIST[tmpval]))
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = _mem.dtmf_settings.auto_reset_time
         if tmpval > 60 or tmpval < 5:
@@ -1451,7 +1457,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("dtmf_auto_reset_time",
                           "Auto reset time (s)",
                           RadioSettingValueInteger(5, 60, tmpval))
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = int(_mem.dtmf_settings.preload_time)
         if tmpval > 100 or tmpval < 3:
@@ -1503,7 +1510,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 "dtmf_permit_remote_kill",
                 "Permit remote kill",
                 RadioSettingValueBoolean(tmpval))
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = str(_mem.dtmf_settings_numbers.dtmf_local_code).upper().strip(
                 "\x00\xff\x20")
@@ -1517,7 +1525,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val.set_charset(DTMF_CHARS_ID)
         rs = RadioSetting("dtmf_dtmf_local_code",
                           "Local code (3 chars 0-9 ABCD)", val)
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = str(_mem.dtmf_settings_numbers.dtmf_up_code).upper().strip(
                 "\x00\xff\x20")
@@ -1561,7 +1570,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val.set_charset(DTMF_CHARS_KILL)
         rs = RadioSetting("dtmf_kill_code",
                           "Kill code (5 chars 0-9 ABCD)", val)
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         tmpval = str(_mem.dtmf_settings_numbers.revive_code).upper().strip(
                 "\x00\xff\x20")
@@ -1577,7 +1587,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val.set_charset(DTMF_CHARS_KILL)
         rs = RadioSetting("dtmf_revive_code",
                           "Revive code (5 chars 0-9 ABCD)", val)
-        dtmf.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
 
         val = RadioSettingValueString(0, 80,
                                       "All DTMF Contacts are 3 codes "
@@ -1708,9 +1719,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # NOAA autoscan
         rs = RadioSetting(
                 "noaa_autoscan",
-                "NOAA Autoscan (* SEE Driver Information if available)", RadioSettingValueBoolean(
+                "NOAA Autoscan (NOAA-S)", RadioSettingValueBoolean(
                     bool(_mem.noaa_autoscan > 0)))
-        basic.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_NOAA:
+            basic.append(rs)
 
         # Mic gain
         tmpmicgain = _mem.mic_gain
@@ -1864,7 +1876,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 "AM Fix (AM Fix)",
                 RadioSettingValueBoolean(
                     bool(_mem.Multi_option.Setting_AM_fix > 0)))
-        basic.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
+            basic.append(rs)
 
         # VOX
         tmpvox = (_mem.vox_level + 1) * _mem.vox_switch
@@ -1872,7 +1885,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpvox = 10
         rs = RadioSetting("vox", "Voice-operated switch (VOX)", RadioSettingValueList(
             VOX_LIST, VOX_LIST[tmpvox]))
-        basic.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_VOX:
+            basic.append(rs)
 
         # RX_MODE
         tmprxmode = (bool(_mem.crossband) << 1) + bool(_mem.dual_watch)
@@ -1905,15 +1919,17 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpvoice = 0
         rs = RadioSetting("voice", "Voice", RadioSettingValueList(
             VOICE_LIST, VOICE_LIST[tmpvoice]))
-        basic.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_VOICE:
+            basic.append(rs)
 
         # Alarm mode
         tmpalarmmode = _mem.alarm_mode
         if tmpalarmmode >= len(ALARMMODE_LIST):
             tmpalarmmode = 0
-        rs = RadioSetting("alarm_mode", "Alarm mode (* SEE Driver Information if available)", RadioSettingValueList(
+        rs = RadioSetting("alarm_mode", "Alarm mode", RadioSettingValueList(
             ALARMMODE_LIST, ALARMMODE_LIST[tmpalarmmode]))
-        basic.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_ALARM:
+            basic.append(rs)
 
         # squelch
         tmpsq = _mem.squelch
@@ -1971,10 +1987,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         unlock.append(rs)
 
         # Killed
-        rs = RadioSetting("int_KILLED", "KILLED DTMF CALLING (* SEE Driver Information if available) ",
+        rs = RadioSetting("int_KILLED", "KILLED DTMF CALLING",
                           RadioSettingValueBoolean(
                               bool(_mem.int_KILLED > 0)))
-        unlock.append(rs)
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            unlock.append(rs)
+
         # 200TX
         rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX (Tx 200)",
                           RadioSettingValueBoolean(
