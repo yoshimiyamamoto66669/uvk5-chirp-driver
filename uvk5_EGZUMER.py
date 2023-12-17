@@ -284,7 +284,7 @@ CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Freqency"]
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
 
 # battery type
-BATTYPE_LIST = ["1600_mAh", "2200_mAh"]
+BATTYPE_LIST = ["1600 mAh", "2200 mAh"]
 # bat txt
 BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
 # Backlight auto mode
@@ -334,7 +334,7 @@ DTCS_CODES = [ # TODO: add negative codes
 ]
 
 # flock list extended 
-FLOCK_LIST = ["DEF", "FCC", "CE", "GB", "430", "438", "Disable All", # TODO: change names
+FLOCK_LIST = ["DEFAULT+", "FCC HAM", "CE HAM", "GB HAM", "400-430", "400-438", "Disable All",
               "Unlock All"]
 
 SCANRESUME_LIST = ["TO: Resume after 5 seconds",
@@ -377,7 +377,6 @@ BANDS_WIDE = {
         5: [400.0, 469.9999],
         6: [470.0, 1300.0]
         }
-
 SPECIALS = {
         "F1(50M-76M)A": 200,
         "F1(50M-76M)B": 201,
@@ -394,14 +393,6 @@ SPECIALS = {
         "F7(470M-600M)A": 212,
         "F7(470M-600M)B": 213
         }
-
-VFO_CHANNEL_NAMES = ["F1(50M-76M)A", "F1(50M-76M)B",
-                     "F2(108M-136M)A", "F2(108M-136M)B",
-                     "F3(136M-174M)A", "F3(136M-174M)B",
-                     "F4(174M-350M)A", "F4(174M-350M)B",
-                     "F5(350M-400M)A", "F5(350M-400M)B",
-                     "F6(400M-470M)A", "F6(400M-470M)B",
-                     "F7(470M-600M)A", "F7(470M-600M)B"]
 
 SCANLIST_LIST = ["None", "List1", "List2", "Both"]
 
@@ -666,6 +657,25 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     NEEDS_COMPAT_SERIAL = False
     FIRMWARE_VERSION = ""
 
+    def Get_VFO_CHANNEL_NAMES(self):
+        isWide = self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX
+        BANDS = BANDS_STANDARD if not isWide else BANDS_WIDE
+        names = []
+        for b in range(7):
+            name = "F{}({}M-{}M)".format(
+                b + 1, 
+                round(BANDS[b][0]),
+                round(BANDS[b][1]))
+            names.append(name + "A")
+            names.append(name + "B")
+        return names
+
+    def Get_SPECIALS(self):
+        specials = {}
+        for idx, name in enumerate(self.Get_VFO_CHANNEL_NAMES()):
+            specials[name] = 200 + idx
+        return specials
+
     def get_prompts(x=None):
         rp = chirp_common.RadioPrompts()
         rp.experimental = \
@@ -704,7 +714,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rf.has_comment = False
         rf.valid_name_length = 10
         rf.valid_power_levels = UVK5_POWER_LEVELS
-        rf.valid_special_chans = list(SPECIALS.keys())
+        rf.valid_special_chans = self.Get_VFO_CHANNEL_NAMES()
 
         rf.valid_tuning_steps = STEPS
 
@@ -855,7 +865,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         mem = chirp_common.Memory()
 
         if isinstance(number2, str):
-            number = SPECIALS[number2]
+            number = self.Get_SPECIALS()[number2]
             mem.extd_number = number2
         else:
             number = number2 - 1
@@ -925,7 +935,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             return mem
 
         if number > 199:
-            mem.name = VFO_CHANNEL_NAMES[number-200]
+            mem.name = self.Get_VFO_CHANNEL_NAMES()[number-200]
             mem.immutable = ["name", "scanlists"]
         else:
             _mem2 = self._memobj.channelname[number]
