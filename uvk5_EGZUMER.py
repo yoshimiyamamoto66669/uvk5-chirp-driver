@@ -139,8 +139,8 @@ u8 vfo_open;
 #seekto 0xe90;
 struct {
   u8 keyM_longpress_action:7,
-     beep_control:1;
-  } beep_keyM;
+     button_beep:1;
+  } _0xe90;
 u8 key1_shortpress_action;
 u8 key1_longpress_action;
 u8 key2_shortpress_action;
@@ -415,8 +415,8 @@ DTMF_CODE_CHARS = "ABCD*# "
 DTMF_DECODE_RESPONSE_LIST = ["None", "Ring", "Reply", "Both"]
 
 KEYACTIONS_LIST = ["None", "Flashlight", "Power", "Monitor", "Scan", 
-                   "VOX", "*Alarm ", "FM radio", "*Transmit 1750Hz",
-                   "Lock Keypad", "Switch VFO", "VFO/MR", "Switch Demodul"]
+                   "VOX", "*Alarm ", "FM radio", "*1750Hz tone",
+                   "Lock keypad", "Switch main VFO", "Switch frequency/memory mode", "Switch demodulation"]
 
 # the communication is obfuscated using this fine mechanism
 def xorarr(data: bytes):
@@ -1123,8 +1123,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.vfo_open = element.value and 1 or 0
 
              # Beep control
-            if element.get_name() == "beep_keyM.beep_control":
-                _mem.beep_keyM.beep_control = element.value and 1 or 0 
+            if element.get_name() == "button_beep":
+                _mem._0xe90.button_beep = element.value and 1 or 0 
 
             # Scan resume mode
             if element.get_name() == "scan_resume_mode":
@@ -1353,8 +1353,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.key2_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
                       
-            if element.get_name() == "beep_keyM.keyM_longpress_action":
-                _mem.beep_keyM.keyM_longpress_action = KEYACTIONS_LIST.index(
+            if element.get_name() == "keyM_longpress_action":
+                _mem._0xe90.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 # compiler option 1 ENABLE_FMRADIO
             if element.get_name() == "Compiler_Option_1.ENABLE_FMRADIO":
@@ -1467,10 +1467,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
-        tmpval = int(_mem.beep_keyM.keyM_longpress_action)
+        tmpval = int(_mem._0xe90.keyM_longpress_action)
         if tmpval >= len(KEYACTIONS_LIST):
             tmpval = 0
-        rs = RadioSetting("beep_keyM.keyM_longpress_action", "(M) Menu long press (M Long)",
+        rs = RadioSetting("keyM_longpress_action", "Menu key long press (M Long)",
                           RadioSettingValueList(
                               KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
         keya.append(rs)
@@ -1878,7 +1878,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpback >= len(BACKLIGHT_TX_RX_LIST):
             tmpback = 0
         rs = RadioSetting("Multi_option.Setting_backlight_on_TX_RX",
-                          "Backlight TX RX (BltTRX)",
+                          "Backlight on TX/RX (BltTRX)",
                           RadioSettingValueList(
                               BACKLIGHT_TX_RX_LIST,
                               BACKLIGHT_TX_RX_LIST[tmpback]))
@@ -1886,9 +1886,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # Beep control
         rs = RadioSetting(
-                "beep_keyM.beep_control",
-                "Beep control (BEEP)",
-                RadioSettingValueBoolean(bool(_mem.beep_keyM.beep_control > 0))) #joc add struct beep_keyM
+                "button_beep",
+                "Key press beep sound (Beep)",
+                RadioSettingValueBoolean(bool(_mem._0xe90.button_beep > 0)))
         basic.append(rs)
 
         # Reminding of end of talk
