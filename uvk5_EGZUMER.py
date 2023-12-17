@@ -356,6 +356,7 @@ ALARMMODE_LIST = ["SITE", "TONE"]
 REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
 RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
             "500ms", "600ms", "700ms", "800ms", "900ms"]
+VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 MEM_SIZE = 0x2000  # size of all memory
 PROG_SIZE = 0x1d00  # size of the memory that we will write
@@ -1046,13 +1047,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if element.get_name() == "noaa_autoscan":
                 _mem.noaa_autoscan = element.value and 1 or 0
 
-            # VOX switch
-            if element.get_name() == "vox_switch":
-                _mem.vox_switch = element.value and 1 or 0
-
-            # vox level
-            if element.get_name() == "vox_level":
-                _mem.vox_level = int(element.value)-1
+            # VOX
+            if element.get_name() == "vox":
+                voxvalue = VOX_LIST.index(str(element.value))
+                _mem.vox_switch = voxvalue > 0
+                _mem.vox_level = (voxvalue - 1) if _mem.vox_switch else 0
 
             # mic gain
             if element.get_name() == "mic_gain":
@@ -1864,19 +1863,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     bool(_mem.Multi_option.Setting_AM_fix > 0)))
         basic.append(rs)
 
-        # VOX switch
-        rs = RadioSetting(
-                "vox_switch",
-                "VOX enabled (* SEE Driver Information if available)", RadioSettingValueBoolean(
-                    bool(_mem.vox_switch > 0)))
-        basic.append(rs)
-
-        # VOX Level
-        tmpvox = _mem.vox_level+1
+        # VOX
+        tmpvox = (_mem.vox_level + 1) * _mem.vox_switch
         if tmpvox > 10:
             tmpvox = 10
-        rs = RadioSetting("vox_level", "VOX Level (VOX)",
-                          RadioSettingValueInteger(1, 10, tmpvox))
+        rs = RadioSetting("vox", "Voice-operated switch (VOX)", RadioSettingValueList(
+            VOX_LIST, VOX_LIST[tmpvox]))
         basic.append(rs)
 
         # RX_MODE
