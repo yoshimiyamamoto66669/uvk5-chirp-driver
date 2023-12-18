@@ -53,7 +53,7 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp
-DRIVER_VERSION = "Quansheng UV-K5 driver v20230626 (c) Jacek Lipkowski SQ5BPF"
+DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver v20231218 (c) egzumer"
 VALEUR_COMPILER = "ENABLE"
 
 MEM_FORMAT = """
@@ -691,14 +691,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             "2. Connect cable to mic/spkr connector.\n"
             "3. Make sure connector is firmly connected.\n"
             "4. Click OK to download image from device.\n\n"
-            "It will may not work if you turn on the radio "
+            "It may not work if you turn on the radio "
             "with the cable already attached\n")
         rp.pre_upload = _(
             "1. Turn radio on.\n"
             "2. Connect cable to mic/spkr connector.\n"
             "3. Make sure connector is firmly connected.\n"
             "4. Click OK to upload the image to device.\n\n"
-            "It will may not work if you turn on the radio "
+            "It may not work if you turn on the radio "
             "with the cable already attached")
         return rp
 
