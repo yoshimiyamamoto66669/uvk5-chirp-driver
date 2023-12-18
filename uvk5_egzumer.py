@@ -2109,9 +2109,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             prev_0b = _mem.get_raw(asbytes=True)[0x0b] & SAVE_MASK_0B
             prev_0c = _mem.get_raw(asbytes=True)[0x0c] & SAVE_MASK_0C
             prev_0d = _mem.get_raw(asbytes=True)[0x0d] & SAVE_MASK_0D
-            _mem.set_raw(bytes("\x00" * 10 +
-                         chr(prev_0a) + chr(prev_0b) + chr(prev_0c) +
-                         chr(prev_0d) + chr(0) + chr(0), "utf-8"))
+            raw = bytes([0]*10 + [prev_0a, prev_0b, prev_0c, prev_0d, 0, 0])
+            _mem.set_raw(raw)
 
         if number < 200:
             _mem4.channel_attributes[number].is_scanlist1 = 0
