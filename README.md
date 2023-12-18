@@ -11,11 +11,16 @@ Licensed cc-by-sa-4.0
 
 At some point the driver will hopefully be added to official release of CHIRP.
 
-Right now you have to:
-1. Download [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1)
+Right now you have to download [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1) and load it to chirp manually.
+
+## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
 1. Restart CHIRP
 1. Go to menu `File`, `Load module...`
 1. Choose downloaded `uvk5_EGZUMER.py`, new radio will appear in Quansheng section in download/upload function.
 1. Important, go to menu `View` and turn ON `Show extra fields`, this will show more options in `Memories` tab
 
+## Loading with CHIRP input argument
+1. Create a shortcut to CHIRP program
+1. Edit shortcut settings, in target field add at the end `--module PATH_TO_DRIVER` (replace `PATH_TO_DRIVER` with a real path)
+1. Run CHIRP with the shortcut, it will autoamtically load the driver.
