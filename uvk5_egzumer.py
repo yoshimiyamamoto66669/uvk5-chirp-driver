@@ -1,5 +1,5 @@
 # Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
-# Adapted For UV-K5 EGZUMER custom software By Jocelyn Maheu
+# Adapted For UV-K5 EGZUMER custom software By EGZUMER, JOC2 
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
 #
@@ -28,12 +28,6 @@
 
 import struct
 import logging
-
-# for adding messagebox.. but not working 
-# from chirp.wxui import main
-# the code 
-# wx.MessageBox(warning, "put your message here.." , wx.OK )
-                
                 
 from chirp import chirp_common, directory, bitwise, memmap, errors, util
 from chirp.settings import RadioSetting, RadioSettingGroup, \
@@ -730,7 +724,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         rf.valid_characters = chirp_common.CHARSET_ASCII
         rf.valid_modes = ["FM", "NFM", "AM", "NAM", "USB"]
-        rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
 
         rf.valid_skips = [""]
 
