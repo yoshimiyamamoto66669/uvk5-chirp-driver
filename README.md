@@ -11,7 +11,7 @@ Licensed cc-by-sa-4.0
 
 At some point the driver will hopefully be added to official release of CHIRP.
 
-Right now you have to download [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1) and load it to chirp manually.
+Currently you can use modified version of CHIRP from [releases](https://github.com/egzumer/uvk5-chirp-driver/releases). You can also use development version of driver [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1) and load it to CHIRP manually.
 
 ## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
