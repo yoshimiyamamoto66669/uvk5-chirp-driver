@@ -22,5 +22,7 @@ Currently you can use modified version of CHIRP from [releases](https://github.c
 
 ## Loading with CHIRP input argument
 1. Create a shortcut to CHIRP program
-1. Edit shortcut settings, in target field add at the end `--module PATH_TO_DRIVER` (replace `PATH_TO_DRIVER` with a real path)
-1. Run CHIRP with the shortcut, it will autoamtically load the driver.
+1. Edit shortcut settings, in target field add at the end `--module PATH_TO_DRIVER` (replace `PATH_TO_DRIVER` with a real path) example : "C:\Program Files (x86)\CHIRP\chirpwx.exe" --module C:\chirp_egzumer\uvk5_EGZUMER.py![add to start shorcut](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/219043eb-631c-4d1d-905d-9e99953de7f5)
+
+1. Run CHIRP with the shortcut, it will automatically load the driver.
+2. ![when chirp start](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/5fa94f0f-a540-4bc0-bd27-633a04e67b41)
