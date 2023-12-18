@@ -334,7 +334,13 @@ DTCS_CODES = [ # TODO: add negative codes
 ]
 
 # flock list extended 
-FLOCK_LIST = ["DEFAULT+", "FCC HAM", "CE HAM", "GB HAM", "400-430", "400-438", "Disable All",
+FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)", 
+              "FCC HAM (144-148, 420-450)", 
+              "CE HAM (144-146, 430-440)", 
+              "GB HAM (144-148, 430-440)", 
+              "137-174, 400-430", 
+              "137-174, 400-438", 
+              "Disable All",
               "Unlock All"]
 
 SCANRESUME_LIST = ["TO: Resume after 5 seconds",
@@ -1607,6 +1613,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
             dtmf.append(rs)
 
+        # Killed
+        rs = RadioSetting("int_KILLED", "DTMF kill lock",
+                          RadioSettingValueBoolean(
+                              bool(_mem.int_KILLED > 0)))
+        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            dtmf.append(rs)
+
         val = RadioSettingValueString(0, 80,
                                       "All DTMF Contacts are 3 codes "
                                       "(valid: 0-9 * # ABCD), "
@@ -1969,7 +1982,16 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rs = RadioSetting("S9_S_meter_level_dbm",
                           "S-meter S9 level [dBm]",
                           RadioSettingValueInteger(-160, -50, tmpS9))
-        basic.append(rs)        
+        basic.append(rs)
+
+        # Battery Type
+        tmpbtype = _mem.Battery_type
+        if tmpbtype >= len(BATTYPE_LIST): 
+            tmpbtype = 0
+        rs = RadioSetting(
+            "Battery_type", "Battery Type (BatTyp)",
+            RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
+        basic.append(rs)
 
         # FM radio
         for i in range(1, 21):
@@ -1998,56 +2020,38 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if tmpflock >= len(FLOCK_LIST):
             tmpflock = 0
         val = RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock])
-        rs = RadioSetting("int_flock", "F-LOCK (F Lock)", val)
+        rs = RadioSetting("int_flock", "TX Frequency Lock (F Lock)", val)
         val.set_validate_callback(validate_int_flock)
         unlock.append(rs)
 
-        # Killed
-        rs = RadioSetting("int_KILLED", "KILLED DTMF CALLING",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_KILLED > 0)))
-        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
-            unlock.append(rs)
-
         # 200TX
-        rs = RadioSetting("int_200tx", "200TX - unlock 174-350MHz TX (Tx 200)",
+        rs = RadioSetting("int_200tx", "Unlock 174-350MHz TX (Tx 200)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_200tx > 0)))
         unlock.append(rs)
 
         # 350TX
-        rs = RadioSetting("int_350tx", "350TX - unlock 350-400MHz TX (Tx 350)",
+        rs = RadioSetting("int_350tx", "Unlock 350-400MHz TX (Tx 350)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350tx > 0)))
         unlock.append(rs)
 
         # 500TX
-        rs = RadioSetting("int_500tx", "500TX - unlock 500-600MHz TX (Tx 500)",
+        rs = RadioSetting("int_500tx", "Unlock 500-600MHz TX (Tx 500)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_500tx > 0)))
         unlock.append(rs)
 
         # 350EN
-        rs = RadioSetting("int_350en", "350EN - unlock 350-400MHz RX (350 En)",
+        rs = RadioSetting("int_350en", "Unlock 350-400MHz RX (350 En)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_350en > 0)))
         unlock.append(rs)
 
         # Scrambler enable
-        rs = RadioSetting("int_scren", "Scrambler enable (ScraEn)",
+        rs = RadioSetting("int_scren", "Scrambler enabled (ScraEn)",
                           RadioSettingValueBoolean(
                               bool(_mem.int_scren > 0)))
-        unlock.append(rs)
-
-
-
-        # Battery Type
-        tmpbtype = _mem.Battery_type
-        if tmpbtype >= len(BATTYPE_LIST): 
-            tmpbtype = 0
-        rs = RadioSetting(
-            "Battery_type", "Battery Type (BatTyp)",
-            RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
         unlock.append(rs)
 
         # readonly info
