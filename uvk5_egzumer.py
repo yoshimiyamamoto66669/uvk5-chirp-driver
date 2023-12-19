@@ -377,25 +377,8 @@ BANDS_WIDE = {
         5: [400.0, 469.9999],
         6: [470.0, 1300.0]
         }
-SPECIALS = {
-        "F1(50M-76M)A": 200,
-        "F1(50M-76M)B": 201,
-        "F2(108M-136M)A": 202,
-        "F2(108M-136M)B": 203,
-        "F3(136M-174M)A": 204,
-        "F3(136M-174M)B": 205,
-        "F4(174M-350M)A": 206,
-        "F4(174M-350M)B": 207,
-        "F5(350M-400M)A": 208,
-        "F5(350M-400M)B": 209,
-        "F6(400M-470M)A": 210,
-        "F6(400M-470M)B": 211,
-        "F7(470M-600M)A": 212,
-        "F7(470M-600M)B": 213
-        }
 
 SCANLIST_LIST = ["None", "List1", "List2", "Both"]
-
 SCANLIST_SELECT_LIST = ["LIST1", "LIST2", "ALL"]
 
 DTMF_CHARS = "0123456789ABCD*# "
@@ -405,9 +388,20 @@ DTMF_CHARS_UPDOWN = "0123456789ABCDabcd#* "
 DTMF_CODE_CHARS = "ABCD*# "
 DTMF_DECODE_RESPONSE_LIST = ["None", "Ring", "Reply", "Both"]
 
-KEYACTIONS_LIST = ["None", "Flashlight", "Power", "Monitor", "Scan", 
-                   "VOX", "*Alarm ", "FM radio", "*1750Hz tone",
-                   "Lock keypad", "Switch main VFO", "Switch frequency/memory mode", "Switch demodulation"]
+KEYACTIONS_LIST = ["None",
+                   "Flashlight",
+                   "Power",
+                   "Monitor",
+                   "Scan",
+                   "VOX",
+                   "Alarm",
+                   "FM radio",
+                   "1750Hz tone",
+                   "Lock keypad",
+                   "Switch main VFO",
+                   "Switch frequency/memory mode",
+                   "Switch demodulation"
+                   ]
 
 # the communication is obfuscated using this fine mechanism
 def xorarr(data: bytes):
@@ -675,7 +669,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         for idx, name in enumerate(self.Get_VFO_CHANNEL_NAMES()):
             specials[name] = 200 + idx
         return specials
-
+    
     def get_prompts(x=None):
         rp = chirp_common.RadioPrompts()
         rp.experimental = \
@@ -1392,43 +1386,44 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         top.append(roinfo)
 
         # Programmable keys
-        tmpval = int(_mem.key1_shortpress_action)
-        if tmpval >= len(KEYACTIONS_LIST):
-            tmpval = 0
-        rs = RadioSetting("key1_shortpress_action", "Side key 1 short press (F1Shrt)",
+        def GetActualKeyAction(actionNum):
+            hasAlarm = self._memobj.BUILD_OPTIONS.ENABLE_ALARM
+            has1750 = self._memobj.BUILD_OPTIONS.ENABLE_TX1750
+            lst = KEYACTIONS_LIST.copy()
+            if not hasAlarm:
+                lst.remove("Alarm")
+            if not has1750:
+                lst.remove("1750Hz tone")
+
+            actionNum = int(actionNum)
+            if actionNum >= len(KEYACTIONS_LIST) or KEYACTIONS_LIST[actionNum] not in lst:
+                actionNum = 0
+            return lst, KEYACTIONS_LIST[actionNum]
+        
+        rs = RadioSetting("key1_shortpress_action", 
+                          "Side key 1 short press (F1Shrt)",
                           RadioSettingValueList(
-                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+                              *GetActualKeyAction(_mem.key1_shortpress_action)))
         keya.append(rs)
 
-        tmpval = int(_mem.key1_longpress_action)
-        if tmpval >= len(KEYACTIONS_LIST):
-            tmpval = 0
         rs = RadioSetting("key1_longpress_action", "Side key 1 long press (F1Long)",
                           RadioSettingValueList(
-                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+                              *GetActualKeyAction(_mem.key1_longpress_action)))
         keya.append(rs)
 
-        tmpval = int(_mem.key2_shortpress_action)
-        if tmpval >= len(KEYACTIONS_LIST):
-            tmpval = 0
         rs = RadioSetting("key2_shortpress_action", "Side key 2 short press (F2Shrt)",
                           RadioSettingValueList(
-                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+                              *GetActualKeyAction(_mem.key2_shortpress_action)))
         keya.append(rs)
 
-        tmpval = int(_mem.key2_longpress_action)
-        if tmpval >= len(KEYACTIONS_LIST):
-            tmpval = 0
         rs = RadioSetting("key2_longpress_action", "Side key 2 long press (F2Long)",
                           RadioSettingValueList(
-                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+                              *GetActualKeyAction(_mem.key2_longpress_action)))
         keya.append(rs)
-        tmpval = int(_mem._0xe90.keyM_longpress_action)
-        if tmpval >= len(KEYACTIONS_LIST):
-            tmpval = 0
+
         rs = RadioSetting("keyM_longpress_action", "Menu key long press (M Long)",
                           RadioSettingValueList(
-                              KEYACTIONS_LIST, KEYACTIONS_LIST[tmpval]))
+                              *GetActualKeyAction(_mem._0xe90.keyM_longpress_action)))
         keya.append(rs)
 
         # DTMF settings
