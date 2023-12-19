@@ -337,9 +337,9 @@ FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "Disable All",
               "Unlock All"]
 
-SCANRESUME_LIST = ["TO: Resume after 5 seconds",
-                   "CO: Resume after signal dissapears",
-                   "SE: Stop scanning after receiving a signal"]
+SCANRESUME_LIST = ["TO: Resume after 5 seconds (TIMEOUT)",
+                   "CO: Resume after signal dissapears (CARRIER)",
+                   "SE: Stop scanning after receiving a signal (STOP)"]
 WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"]
 VOICE_LIST = ["OFF", "Chinese", "English"]
 
@@ -1718,7 +1718,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmptot = 10
         rs = RadioSetting(
                 "tot",
-                "Max talk time (TxTout) [min]",
+                "Max talk time (TxTOut) [min]",
                 RadioSettingValueInteger(0, 10, tmptot))
         basic.append(rs)
 
@@ -1925,7 +1925,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpscanres = 0
         rs = RadioSetting(
                 "scan_resume_mode",
-                "Scan resume mode",
+                "Scan resume mode (ScnRev)",
                 RadioSettingValueList(
                     SCANRESUME_LIST,
                     SCANRESUME_LIST[tmpscanres]))
