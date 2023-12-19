@@ -20,7 +20,6 @@ You can also use development version of driver [uvk5_EGZUMER.py](uvk5_EGZUMER.py
 1. Restart CHIRP
 1. Go to menu `File`, `Load module...`
 1. Choose downloaded `uvk5_EGZUMER.py`, new radio will appear in Quansheng section in download/upload function.
-1. Important, go to menu `View` and turn ON `Show extra fields`, this will show more options in `Memories` tab
 
 ## Loading with CHIRP input argument
 1. Create a shortcut to CHIRP program
@@ -28,6 +27,10 @@ You can also use development version of driver [uvk5_EGZUMER.py](uvk5_EGZUMER.py
 
 1. Run CHIRP with the shortcut, it will automatically load the driver.
 ![when chirp start](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/5fa94f0f-a540-4bc0-bd27-633a04e67b41)
+
+## Custom channel settings
+
+By default CHIRP shows only default channel options, that are universal for all types radios. You can see and change custom channel settings by going to menu `View` and turning on `Show extra fields`, this will show more options in the `Memories` tab.
 
 # Custom firmware build options
 
