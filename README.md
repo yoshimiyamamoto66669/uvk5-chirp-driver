@@ -11,7 +11,9 @@ Licensed cc-by-sa-4.0
 
 At some point the driver will hopefully be added to official release of CHIRP.
 
-Currently you can use modified version of CHIRP from [releases](https://github.com/egzumer/uvk5-chirp-driver/releases). You can also use development version of driver [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1) and load it to CHIRP manually.
+Currently you can use modified version of CHIRP from [releases](https://github.com/egzumer/uvk5-chirp-driver/releases). The modified CHIRP is built from [source code](https://github.com/egzumer/chirp/tree/egzumer) and contains the driver. It is packed using pyinstaller into one file for convinience, however some antiviruses don't like that and [report it as a threat](https://stackoverflow.com/questions/43777106/program-made-with-pyinstaller-now-seen-as-a-trojan-horse-by-avg). If you don't trust this file, then use the other method.
+
+You can also use development version of driver [uvk5_EGZUMER.py](uvk5_EGZUMER.py?raw=1) and load it to CHIRP manually.
 
 ## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
@@ -22,7 +24,12 @@ Currently you can use modified version of CHIRP from [releases](https://github.c
 
 ## Loading with CHIRP input argument
 1. Create a shortcut to CHIRP program
-1. Edit shortcut settings, in target field add at the end `--module PATH_TO_DRIVER` (replace `PATH_TO_DRIVER` with a real path) example : "C:\Program Files (x86)\CHIRP\chirpwx.exe" --module C:\chirp_egzumer\uvk5_EGZUMER.py![add to start shorcut](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/219043eb-631c-4d1d-905d-9e99953de7f5)
+1. Edit shortcut settings, in target field add at the end `--module PATH_TO_DRIVER` (replace `PATH_TO_DRIVER` with a real path) example : "C:\Program Files (x86)\CHIRP\chirpwx.exe" --module C:\chirp_egzumer\uvk5_EGZUMER.py![add to start shorcut](resources/short.png)
 
 1. Run CHIRP with the shortcut, it will automatically load the driver.
-2. ![when chirp start](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/5fa94f0f-a540-4bc0-bd27-633a04e67b41)
+![when chirp start](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/5fa94f0f-a540-4bc0-bd27-633a04e67b41)
+
+# Custom firmware build options
+
+This driver supports custom Egzumer firmware builds and detects which [options](https://github.com/egzumer/uv-k5-firmware-custom?tab=readme-ov-file#user-customization) have been used.
+Disabled options will be hidden in CHIRP. This only works if the configuration was read from a specific radio. You can use configuration files from other radios with different build options, but unsupported settings will be reset to defaults on the target radio.
