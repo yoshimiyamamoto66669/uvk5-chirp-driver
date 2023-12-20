@@ -340,7 +340,7 @@ FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
 SCANRESUME_LIST = ["TO: Resume after 5 seconds (TIMEOUT)",
                    "CO: Resume after signal dissapears (CARRIER)",
                    "SE: Stop scanning after receiving a signal (STOP)"]
-WELCOME_LIST = ["Full Screen", "Welcome Info", "Voltage", "None"]
+WELCOME_LIST = ["FULL", "MESSAGE", "VOLTAGE", "NONE"]
 VOICE_LIST = ["OFF", "Chinese", "English"]
 
 ALARMMODE_LIST = ["SITE", "TONE"]
@@ -1776,7 +1776,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             tmpdispmode = 0
         rs = RadioSetting(
                 "welcome_mode",
-                "Power on display message (POnMsg)",
+                "Power ON display message (POnMsg)",
                 RadioSettingValueList(
                     WELCOME_LIST,
                     WELCOME_LIST[tmpdispmode]))
@@ -1785,14 +1785,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Logo string 1
         logo1 = str(_mem.logo_line1).strip("\x20\x00\xff") + "\x00"
         logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo1", "Logo string 1 (MAX 12 characters)",
+        rs = RadioSetting("logo1", "Message line 1 (MAX 12 characters)",
                           RadioSettingValueString(0, 12, logo1))
         basic.append(rs)
 
         # Logo string 2
         logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
         logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo2", "Logo string 2 ( MAX 12 characters)",
+        rs = RadioSetting("logo2", "Message line 2 ( MAX 12 characters)",
                           RadioSettingValueString(0, 12, logo2))
         basic.append(rs)
 
