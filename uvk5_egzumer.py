@@ -272,7 +272,7 @@ COMPANDER_LIST = ["OFF", "TX", "RX", "TX/RX"]
 # rx mode
 RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"]
 # channel display mode
-CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Freqency"]
+CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
@@ -990,7 +990,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # BusyCL
         is_bclo = bool(_mem.busyChLockout)
-        rs = RadioSetting("busyChLockout", "Busy Ch Lockout", RadioSettingValueBoolean(is_bclo))
+        rs = RadioSetting("busyChLockout", "Busy Ch Lockout    (BusyCL)", RadioSettingValueBoolean(is_bclo))
         mem.extra.append(rs)
         tmpcomment += "BusyCL:"+(is_bclo and "ON" or "OFF")+" "
 
