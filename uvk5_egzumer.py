@@ -1483,14 +1483,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueInteger(30, 1000, tmpval, 10))
         dtmf.append(rs)
 
-        tmpval = bool(_mem.dtmf_settings.permit_remote_kill > 0)
-        rs = RadioSetting(
-                "dtmf_permit_remote_kill",
-                "Permit remote kill",
-                RadioSettingValueBoolean(tmpval))
-        if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
-            dtmf.append(rs)
-
         tmpval = str(_mem.dtmf_settings_numbers.dtmf_local_code).upper().strip(
                 "\x00\xff\x20")
         for i in tmpval:
