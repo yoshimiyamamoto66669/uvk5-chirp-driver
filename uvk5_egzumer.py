@@ -1992,6 +1992,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
 
         # FM radio
+        val = RadioSettingValueString(0, 80, "FM Radio Station Frequency")
+        val.set_mutable(False)
+        rs = RadioSetting("Radio FM", "FM Radio Station Name (Press F key then on 0 key for FM radio ON/OFF)", val)
+        fmradio.append(rs)
+      
         for i in range(1, 21):
             freqname = "FM_"+str(i)
             fmfreq = _mem.fmfreq[i-1]/10.0
