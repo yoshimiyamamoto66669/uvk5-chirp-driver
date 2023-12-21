@@ -265,7 +265,7 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
                      ]
 
 # scrambler
-SCRAMBLER_LIST = ["OFF", "2600Hz", "2700", "2800Hz", "2900Hz", "3000Hz",
+SCRAMBLER_LIST = ["OFF", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
                    "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
 # compander
 COMPANDER_LIST = ["OFF", "TX", "RX", "TX/RX"]
