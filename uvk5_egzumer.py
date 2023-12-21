@@ -710,7 +710,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rf.valid_power_levels = UVK5_POWER_LEVELS
         rf.valid_special_chans = self.Get_VFO_CHANNEL_NAMES()
 
-        rf.valid_tuning_steps = STEPS
+        steps = STEPS.copy()
+        steps.sort()
+        rf.valid_tuning_steps = steps
 
         rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
         rf.valid_cross_modes = ["Tone->Tone", "Tone->DTCS", "DTCS->Tone",
@@ -966,7 +968,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             mem.mode = "UNSUPPORTED BY CHIRP"
         
         # tuning step
-        tstep = _mem.step & 0x7
+        tstep = _mem.step
         if tstep < len(STEPS):
             mem.tuning_step = STEPS[tstep]
         else:
