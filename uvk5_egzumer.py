@@ -330,9 +330,9 @@ FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "Disable All",
               "Unlock All"]
 
-SCANRESUME_LIST = ["TO: Resume after 5 seconds (TIMEOUT)",
-                   "CO: Resume after signal dissapears (CARRIER)",
-                   "SE: Stop scanning after receiving a signal (STOP)"]
+SCANRESUME_LIST = ["Listen 5 seconds and resume (TIMEOUT)",
+                   "Listen until signal dissapears (CARRIER)",
+                   "Stop scanning after receiving a signal (STOP)"]
 WELCOME_LIST = ["FULL", "MESSAGE", "VOLTAGE", "NONE"]
 VOICE_LIST = ["OFF", "Chinese", "English"]
 
@@ -1713,7 +1713,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # Keypad locked
         rs = RadioSetting(
                 "key_lock",
-                "Keypad lock",
+                "Keypad locked",
                 RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
         basic.append(rs)
 
@@ -1994,21 +1994,18 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(rs)
 
         # FM radio
-        val = RadioSettingValueString(0, 80, "FM Radio Station Frequency")
+        val = RadioSettingValueString(0, 80, "Frequency [MHz]")
         val.set_mutable(False)
-        rs = RadioSetting("Radio FM", "FM Radio Station Name (Press F key then on 0 key for FM radio ON/OFF)", val)
+        rs = RadioSetting("fm_radio_column_descr", "Channel", val)
         fmradio.append(rs)
       
         for i in range(1, 21):
-            freqname = "FM_"+str(i)
             fmfreq = _mem.fmfreq[i-1]/10.0
+            freqName = str(fmfreq)
             if fmfreq < FMMIN or fmfreq > FMMAX:
-                rs = RadioSetting(freqname, freqname,
-                                  RadioSettingValueString(0, 5, ""))
-            else:
-                rs = RadioSetting(freqname, freqname,
-                                  RadioSettingValueString(0, 5, str(fmfreq)))
-
+                freqName = ""
+            rs = RadioSetting("FM_" + str(i), "Ch " + str(i),
+                                RadioSettingValueString(0, 5, freqName))
             fmradio.append(rs)
 
         # unlock settings
