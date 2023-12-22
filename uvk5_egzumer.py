@@ -61,15 +61,12 @@ struct {
   u8 txcode;
 
 // 0x0A
-  u8 unknown1:2,
-  txcodeflag:2,
-  unknown2:2,
-  rxcodeflag:2;
+  u8 txcodeflag:4,
+  rxcodeflag:4;
 
 // 0x0B
   u8 modulation:4,
-  __UNUSED:2,
-  shift:2;
+  offsetDir:4;
 
 // 0x0C
   u8 __UNUSED1:3,
@@ -240,11 +237,7 @@ u8 __UNUSED:3,
 } BUILD_OPTIONS;
 
 """
-# bits that we will save from the channel structure (mostly unknown)
-SAVE_MASK_0A = 0b11001100
-SAVE_MASK_0B = 0b00001100
-SAVE_MASK_0C = 0b11100000
-SAVE_MASK_0D = 0b11110000
+
 
 # flags1
 FLAGS1_OFFSET_NONE = 0b00
@@ -808,8 +801,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         _mem.rxcodeflag = rxmoval
         _mem.txcodeflag = txmoval
-        _mem.unknown1 = 0
-        _mem.unknown2 = 0
         _mem.rxcode = rxtoval
         _mem.txcode = txtoval
 
@@ -947,9 +938,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if (mem.offset == 0):
             mem.duplex = ''
         else:
-            if _mem.shift == FLAGS1_OFFSET_MINUS:
+            if _mem.offsetDir == FLAGS1_OFFSET_MINUS:
                 mem.duplex = '-'
-            elif _mem.shift == FLAGS1_OFFSET_PLUS:
+            elif _mem.offsetDir == FLAGS1_OFFSET_PLUS:
                 mem.duplex = '+'
             else:
                 mem.duplex = ''
@@ -2107,15 +2098,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.get_raw()[0] == "\xff":
             # this was an empty memory
             _mem.set_raw("\x00" * 16)
-        else:
-            # this memory was't empty, save some bits that we don't know the
-            # meaning of, or that we don't support yet
-            prev_0a = _mem.get_raw(asbytes=True)[0x0a] & SAVE_MASK_0A
-            prev_0b = _mem.get_raw(asbytes=True)[0x0b] & SAVE_MASK_0B
-            prev_0c = _mem.get_raw(asbytes=True)[0x0c] & SAVE_MASK_0C
-            prev_0d = _mem.get_raw(asbytes=True)[0x0d] & SAVE_MASK_0D
-            raw = bytes([0]*10 + [prev_0a, prev_0b, prev_0c, prev_0d, 0, 0])
-            _mem.set_raw(raw)
 
         if number < 200:
             _mem4.channel_attributes[number].is_scanlist1 = 0
@@ -2140,11 +2122,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         if mem.duplex == "OFF" or mem.duplex == "":
             _mem.offset = 0
-            _mem.shift = 0
+            _mem.offsetDir = 0
         elif mem.duplex == '-':
-            _mem.shift = FLAGS1_OFFSET_MINUS
+            _mem.offsetDir = FLAGS1_OFFSET_MINUS
         elif mem.duplex == '+':
-            _mem.shift = FLAGS1_OFFSET_PLUS
+            _mem.offsetDir = FLAGS1_OFFSET_PLUS
 
         # set band
         if number < 200:
