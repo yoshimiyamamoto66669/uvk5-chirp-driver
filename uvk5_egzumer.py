@@ -702,6 +702,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rf.valid_name_length = 10
         rf.valid_power_levels = UVK5_POWER_LEVELS
         rf.valid_special_chans = self.Get_VFO_CHANNEL_NAMES()
+        rf.valid_duplexes = ["", "-", "+", "off"]
 
         steps = STEPS.copy()
         steps.sort()
@@ -752,6 +753,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     def validate_memory(self, mem):
         msgs = super().validate_memory(mem)
 
+        if mem.duplex == 'off':
+            return msgs
+        
         # find tx frequency
         if mem.duplex == '-':
             txfreq = mem.freq - mem.offset
@@ -939,7 +943,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             mem.duplex = ''
         else:
             if _mem.offsetDir == FLAGS1_OFFSET_MINUS:
-                mem.duplex = '-'
+                if _mem.freq == _mem.offset:
+                    # fake tx disable by setting tx to 0 MHz
+                    mem.duplex = 'off'
+                    mem.offset = 0
+                else:
+                    mem.duplex = '-'
             elif _mem.offsetDir == FLAGS1_OFFSET_PLUS:
                 mem.duplex = '+'
             else:
@@ -2127,7 +2136,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             _mem.offsetDir = FLAGS1_OFFSET_MINUS
         elif mem.duplex == '+':
             _mem.offsetDir = FLAGS1_OFFSET_PLUS
-
+        elif mem.duplex == 'off':
+            # we fake tx disable by setting the tx freq to 0 MHz
+            _mem.offsetDir = FLAGS1_OFFSET_MINUS
+            _mem.offset = _mem.freq
         # set band
         if number < 200:
             _mem4.channel_attributes[number].is_free = 0
