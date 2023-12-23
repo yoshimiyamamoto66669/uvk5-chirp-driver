@@ -93,7 +93,7 @@ is_scanlist2:1,
 compander:2,
 is_free:1,
 band:3;
-} channel_attributes[200];
+} ch_attr[200];
 
 #seekto 0xe40;
 ul16 fmfreq[20];
@@ -116,9 +116,9 @@ u8 channel_display_mode;
 u8 crossband;
 u8 battery_save;
 u8 dual_watch;
-u8 backlight_auto_mode;
-u8 tail_note_elimination;
-u8 vfo_open;
+u8 backlight_time;
+u8 ste;
+u8 freq_mode_allowed;
 
 #seekto 0xe90;
 struct {
@@ -136,13 +136,13 @@ u8 password[4];
 
 #seekto 0xea0;
 u8 voice;
-u8 S0_S_meter_level_dbm;
-u8 S9_S_meter_level_dbm;
+u8 s0_level;
+u8 s9_level;
 
 #seekto 0xea8;
 u8 alarm_mode;
-u8 reminding_of_end_talk_ROGER;
-u8 repeater_tail_elimination;
+u8 roger_beep;
+u8 rp_ste;
 u8 TX_VFO;
 u8 Battery_type;
 
@@ -204,7 +204,7 @@ u8  Setting_backlight_on_TX_RX:2,
     Setting_battery_text:2,
     Setting_live_DTMF_decoder:1,
     unknown:1;
-  } Multi_option;
+  } _0x0f47;
   
 #seekto 0xf50;
 struct {
@@ -875,7 +875,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpscn = SCANLIST_LIST[0]
         tmpComp = COMPANDER_LIST[0]
         if number < 200:
-            _mem3 = self._memobj.channel_attributes[number]
+            _mem3 = self._memobj.ch_attr[number]
             # free memory bit
             if _mem3.is_free:
                 is_empty = True
@@ -1091,9 +1091,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 tmprxmode = RXMODE_LIST.index(str(element.value))
 
             # Backlight auto mode
-            if element.get_name() == "backlight_auto_mode":
-                _mem.backlight_auto_mode = \
-                        BACKLIGHT_LIST.index(str(element.value))
+            if element.get_name() == "backlight_time":
+                _mem.backlight_time = BACKLIGHT_LIST.index(str(element.value))
 
             # Backlight min
             if element.get_name() == "backlight.backlight_min":
@@ -1106,30 +1105,30 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                         BACKLIGHT_LVL_LIST.index(str(element.value))
 
             # Backlight TX_RX
-            if element.get_name() == "Multi_option.Setting_backlight_on_TX_RX":
-                _mem.Multi_option.Setting_backlight_on_TX_RX = \
+            if element.get_name() == "_0x0f47.Setting_backlight_on_TX_RX":
+                _mem._0x0f47.Setting_backlight_on_TX_RX = \
                         BACKLIGHT_TX_RX_LIST.index(str(element.value))  
                        
             # AM_fix
-            if element.get_name() == "Multi_option.Setting_AM_fix":
-                _mem.Multi_option.Setting_AM_fix = element.value and 1 or 0
+            if element.get_name() == "_0x0f47.Setting_AM_fix":
+                _mem._0x0f47.Setting_AM_fix = element.value and 1 or 0
                                           
             # mic_bar
-            if element.get_name() == "mem.Multi_option.Setting_mic_bar":
-                _mem.Multi_option.Setting_mic_bar = element.value and 1 or 0
+            if element.get_name() == "mem._0x0f47.Setting_mic_bar":
+                _mem._0x0f47.Setting_mic_bar = element.value and 1 or 0
                     
              # Batterie txt
-            if element.get_name() == "_mem.Multi_option.Setting_battery_text":
-                _mem.Multi_option.Setting_battery_text = \
+            if element.get_name() == "_mem._0x0f47.Setting_battery_text":
+                _mem._0x0f47.Setting_battery_text = \
                         BAT_TXT_LIST.index(str(element.value))  
                             
             # Tail tone elimination
-            if element.get_name() == "tail_note_elimination":
-                _mem.tail_note_elimination = element.value and 1 or 0
+            if element.get_name() == "ste":
+                _mem.ste = element.value and 1 or 0
 
             # VFO Open
-            if element.get_name() == "vfo_open":
-                _mem.vfo_open = element.value and 1 or 0
+            if element.get_name() == "freq_mode_allowed":
+                _mem.freq_mode_allowed = element.value and 1 or 0
 
              # Beep control
             if element.get_name() == "button_beep":
@@ -1156,23 +1155,22 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if element.get_name() == "voice":
                 _mem.voice = VOICE_LIST.index(str(element.value))
 
-            if element.get_name() == "S0_S_meter_level_dbm":
-                _mem.S0_S_meter_level_dbm = -int(element.value)
+            if element.get_name() == "s0_level":
+                _mem.s0_level = -int(element.value)
 
-            if element.get_name() == "S9_S_meter_level_dbm":
-                _mem.S9_S_meter_level_dbm = -int(element.value)
+            if element.get_name() == "s9_level":
+                _mem.s9_level = -int(element.value)
             # Alarm mode
             if element.get_name() == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
 
             # Reminding of end of talk
-            if element.get_name() == "reminding_of_end_talk_ROGER":
-                _mem.reminding_of_end_talk_ROGER = REMENDOFTALK_LIST.index(
-                    str(element.value))
+            if element.get_name() == "roger_beep":
+                _mem.roger_beep = REMENDOFTALK_LIST.index(str(element.value))
 
             # Repeater tail tone elimination
-            if element.get_name() == "repeater_tail_elimination":
-                _mem.repeater_tail_elimination = RTE_LIST.index(
+            if element.get_name() == "rp_ste":
+                _mem.rp_ste = RTE_LIST.index(
                     str(element.value))
 
             # Logo string 1
@@ -1298,8 +1296,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 k = str(element.value).strip("\x20\xff\x00") + "\x00"*5
                 _mem.dtmf_settings_numbers.revive_code = k[0:5]
               
-            if element.get_name() == "Multi_option.Setting_live_DTMF_decoder":
-                _mem.Multi_option.Setting_live_DTMF_decoder = element.value and 1 or 0
+            if element.get_name() == "_0x0f47.Setting_live_DTMF_decoder":
+                _mem._0x0f47.Setting_live_DTMF_decoder = element.value and 1 or 0
             
             # dtmf contacts
             for i in range(1, 17):
@@ -1370,6 +1368,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     def get_settings(self):
         _mem = self._memobj
         basic = RadioSettingGroup("basic", "Basic Settings")
+        extra = RadioSettingGroup("basic", "Extra Settings")
         keya = RadioSettingGroup("keya", "Programmable keys")
         dtmf = RadioSettingGroup("dtmf", "DTMF Settings")
         dtmfc = RadioSettingGroup("dtmfc", "DTMF Contacts")
@@ -1380,6 +1379,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         roinfo = RadioSettingGroup("roinfo", "Driver information")
         top = RadioSettings()
         top.append(basic)
+        top.append(extra)
         top.append(keya)
         top.append(dtmf)
         if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
@@ -1389,6 +1389,33 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_FMRADIO:
             top.append(fmradio)
         top.append(roinfo)
+
+        # helper function
+        def minMaxDef(value, minVal, maxVal, default):
+            if minVal != None and value < minVal: 
+                return default
+            if maxVal != None and value > maxVal: 
+                return default
+            return value
+        
+        # helper function
+        def listDef(value, lst, default):
+            if isinstance(default, str):
+                default = lst.index(default)
+            if value < 0 or value >= len(lst):
+                return default
+            return value
+
+        # helper function
+        def appendLabel(radioSetting, label, descr = ""):
+            if not hasattr(appendLabel, 'idx'):
+                appendLabel.idx = 0
+
+            val = RadioSettingValueString(len(descr), len(descr), descr)
+            val.set_mutable(False)
+            rs = RadioSetting("label" + str(appendLabel.idx), label, val)
+            appendLabel.idx += 1
+            radioSetting.append(rs)
 
         # Programmable keys
         def GetActualKeyAction(actionNum):
@@ -1430,6 +1457,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueList(
                               *GetActualKeyAction(_mem._0xe90.keyM_longpress_action)))
         keya.append(rs)
+
+
+################## DTMF settings
 
         tmpval = str(_mem.dtmf_settings.separate_code)
         if tmpval not in DTMF_CODE_CHARS:
@@ -1564,10 +1594,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         
         # D LIVE
         rs = RadioSetting(
-                "Multi_option.Setting_live_DTMF_decoder",
+                "_0x0f47.Setting_live_DTMF_decoder",
                 "Displays DTMF codes received in the middle of the screen (D Live)",
                 RadioSettingValueBoolean(
-                    bool(_mem.Multi_option.Setting_live_DTMF_decoder > 0)))
+                    bool(_mem._0x0f47.Setting_live_DTMF_decoder > 0)))
         if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
             dtmf.append(rs)
 
@@ -1620,13 +1650,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
             dtmf.append(rs)
 
-        val = RadioSettingValueString(0, 80,
-                                      "All DTMF Contacts are 3 codes "
-                                      "(valid: 0-9 * # ABCD), "
-                                      "or an empty string")
-        val.set_mutable(False)
-        rs = RadioSetting("dtmf_descr1", "DTMF Contacts  (D List)", val)
-        dtmfc.append(rs)
+
+
+################## DTMF Contacts
+
+        appendLabel(dtmfc, "DTMF Contacts  (D List)",
+                    "All DTMF Contacts are 3 codes "
+                    "(valid: 0-9 * # ABCD), "
+                    "or an empty string")
 
         for i in range(1, 17):
             varname = "DTMF_"+str(i)
@@ -1645,6 +1676,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             val.set_charset(DTMF_CHARS)
             rs = RadioSetting(varnumname, varinumdescr, val)
             dtmfc.append(rs)
+
+################## Scan Lists
 
         tmpscanl = _mem.scanlist_default
         rs = RadioSetting("scanlist_default",
@@ -1700,304 +1733,171 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           RadioSettingValueInteger(0, 200, tmpch))
         scanl.append(rs)
 
-        # basic settings
+################## Basic settings
 
-        # call channel
-        tmpc = _mem.call_channel+1
-        if tmpc > 200:
-            tmpc = 1
-        rs = RadioSetting("call_channel", "One key call channel",
-                          RadioSettingValueInteger(1, 200, tmpc))
-        basic.append(rs)
+        # Call channel
 
+        # squelch
+        tmpsq = minMaxDef(_mem.squelch, 0, 9, 1)
+        val = RadioSettingValueInteger(0, 9, tmpsq)
+        squelchSetting = RadioSetting("squelch", "Squelch (Sql)", val)
+
+        # One key call channel
+        tmpc = minMaxDef(_mem.call_channel + 1, 1, 200, 1)
+        val = RadioSettingValueInteger(1, 200, tmpc)
+        callChannelSetting = RadioSetting("call_channel", "One key call channel", val)
+        
         # Keypad locked
-        rs = RadioSetting(
-                "key_lock",
-                "Keypad locked",
-                RadioSettingValueBoolean(bool(_mem.key_lock > 0)))
-        basic.append(rs)
+        val = RadioSettingValueBoolean(_mem.key_lock)
+        keypadLockSetting = RadioSetting("key_lock", "Keypad locked", val)
 
         # Auto keypad lock
-        rs = RadioSetting(
-                "auto_keypad_lock",
-                "Auto keypad lock (KeyLck)",
-                RadioSettingValueBoolean(bool(_mem.auto_keypad_lock > 0)))
-        basic.append(rs)
+        val = RadioSettingValueBoolean(_mem.auto_keypad_lock)
+        autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock (KeyLck)", val)
 
         # TOT
-        tmptot = _mem.max_talk_time
-        if tmptot > 10:
-            tmptot = 10
-        rs = RadioSetting(
-                "tot",
-                "Max talk time (TxTOut) [min]",
-                RadioSettingValueInteger(0, 10, tmptot))
-        basic.append(rs)
+        tmptot = minMaxDef(_mem.max_talk_time, 0, 10, 10)
+        val = RadioSettingValueInteger(0, 10, tmptot)
+        txTOutSetting = RadioSetting("tot", "Max talk time [min] (TxTOut)", val)
 
         # Battery save
-        tmpbatsave = _mem.battery_save
-        if tmpbatsave >= len(BATSAVE_LIST):
-            tmpbatsave = BATSAVE_LIST.index("1:4")
-        rs = RadioSetting(
-                "battery_save",
-                "Battery Save (10ms * x) (BatSav)",
-                RadioSettingValueList(
-                    BATSAVE_LIST,
-                    BATSAVE_LIST[tmpbatsave]))
-        basic.append(rs)
+        tmpbatsave = listDef(_mem.battery_save, BATSAVE_LIST, "1:4")
+        val = RadioSettingValueList(BATSAVE_LIST, None, tmpbatsave)
+        batSaveSetting = RadioSetting("battery_save", "Battery save (BatSav)", val)
 
         # NOAA autoscan
-        rs = RadioSetting(
-                "noaa_autoscan",
-                "NOAA Autoscan (NOAA-S)", RadioSettingValueBoolean(
-                    bool(_mem.noaa_autoscan > 0)))
-        if _mem.BUILD_OPTIONS.ENABLE_NOAA:
-            basic.append(rs)
+        val = RadioSettingValueBoolean(_mem.noaa_autoscan)
+        noaaAutoScanSetting = RadioSetting("noaa_autoscan", "NOAA Autoscan (NOAA-S)", val)
 
         # Mic gain
-        tmpmicgain = _mem.mic_gain
-        if tmpmicgain > 4:
-            tmpmicgain = 4
-        rs = RadioSetting("mic_gain", "Mic Gain (Mic)",
-                          RadioSettingValueInteger(0, 4, tmpmicgain))
-        basic.append(rs)
-                  
+        tmpmicgain = minMaxDef(_mem.mic_gain, 0, 4, 4)
+        val = RadioSettingValueInteger(0, 4, tmpmicgain)
+        micGainSetting = RadioSetting("mic_gain", "Mic Gain (Mic)", val)
+
         # Mic_bar
-        rs = RadioSetting(
-                "Multi_option.Setting_mic_bar",
-                "Microphone Bar display (MicBar)",
-                RadioSettingValueBoolean(
-                    bool(_mem.Multi_option.Setting_mic_bar > 0)))
-        basic.append(rs)
+        val = RadioSettingValueBoolean(_mem._0x0f47.Setting_mic_bar)
+        micBarSetting = RadioSetting("_0x0f47.Setting_mic_bar", "Microphone Bar display (MicBar)", val)
 
         # Channel display mode
-        tmpchdispmode = _mem.channel_display_mode
-        if tmpchdispmode >= len(CHANNELDISP_LIST):
-            tmpchdispmode = 0
-        rs = RadioSetting(
-                "channel_display_mode",
-                "Channel display mode (ChDisp)",
-                RadioSettingValueList(
-                    CHANNELDISP_LIST,
-                    CHANNELDISP_LIST[tmpchdispmode]))
-        basic.append(rs)
+        tmpchdispmode = listDef(_mem.channel_display_mode, CHANNELDISP_LIST, "Frequency")
+        val = RadioSettingValueList(CHANNELDISP_LIST, None, tmpchdispmode)
+        chDispSetting = RadioSetting("channel_display_mode", "Channel display mode (ChDisp)", val)
 
         # Power on display mode
-        tmpdispmode = _mem.power_on_dispmode
-        if tmpdispmode >= len(WELCOME_LIST):
-            tmpdispmode = 0
-        rs = RadioSetting(
-                "welcome_mode",
-                "Power ON display message (POnMsg)",
-                RadioSettingValueList(
-                    WELCOME_LIST,
-                    WELCOME_LIST[tmpdispmode]))
-        basic.append(rs)
-        
+        tmpdispmode = listDef(_mem.power_on_dispmode, WELCOME_LIST, 0)
+        val = RadioSettingValueList(WELCOME_LIST, None, tmpdispmode)
+        pOnMsgSetting = RadioSetting("welcome_mode", "Power ON display message (POnMsg)", val)
+
         # Logo string 1
         logo1 = str(_mem.logo_line1).strip("\x20\x00\xff") + "\x00"
         logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo1", "Message line 1 ( MAX 12 characters )",
-                          RadioSettingValueString(0, 12, logo1))
-        basic.append(rs)
-
+        val = RadioSettingValueString(0, 12, logo1)
+        logo1Setting = RadioSetting("logo1", "Message line 1 ( MAX 12 characters )", val)
+        
         # Logo string 2
         logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
         logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
-        rs = RadioSetting("logo2", "Message line 2 ( MAX 12 characters )",
-                          RadioSettingValueString(0, 12, logo2))
-        basic.append(rs)
+        val = RadioSettingValueString(0, 12, logo2)
+        logo2Setting = RadioSetting("logo2", "Message line 2 ( MAX 12 characters )", val)
 
        # Bat_txt
-        tmpbattxt = _mem.Multi_option.Setting_battery_text
-        if tmpbattxt >= len(BAT_TXT_LIST):
-            tmpbattxt = 0
-
-        rs = RadioSetting("Multi_option.Setting_battery_text",
-                          "Battery Level Display (BatTXT)",
-                          RadioSettingValueList(
-                              BAT_TXT_LIST,
-                              BAT_TXT_LIST[tmpbattxt]))
-        basic.append(rs) 
+        tmpbattxt = listDef(_mem._0x0f47.Setting_battery_text, BAT_TXT_LIST, 0)
+        val = RadioSettingValueList(BAT_TXT_LIST, None, tmpbattxt)
+        batTxtSetting = RadioSetting("_0x0f47.Setting_battery_text", "Battery Level Display (BatTXT)", val)
 
         # Backlight auto mode
-        tmpback = _mem.backlight_auto_mode
-        if tmpback >= len(BACKLIGHT_LIST):
-            tmpback = 0
-        rs = RadioSetting("backlight_auto_mode",
-                          "Backlight auto mode (BackLt)",
-                          RadioSettingValueList(
-                              BACKLIGHT_LIST,
-                              BACKLIGHT_LIST[tmpback]))
-        basic.append(rs)
+        tmpback = listDef(_mem.backlight_time, BACKLIGHT_LIST, 0)
+        val = RadioSettingValueList(BACKLIGHT_LIST, None, tmpback)
+        backLtSetting = RadioSetting("backlight_time", "Backlight time (BackLt)", val)
+
         # Backlight min
-        tmpback = _mem.backlight.backlight_min
-        if tmpback >= len(BACKLIGHT_LVL_LIST):
-            tmpback = 0
-        rs = RadioSetting("backlight.backlight_min",
-                          "Backlight level min (BLMin)",
-                          RadioSettingValueList(
-                              BACKLIGHT_LVL_LIST,
-                              BACKLIGHT_LVL_LIST[tmpback]))
-        basic.append(rs)
-        
+        tmpback = listDef(_mem.backlight.backlight_min, BACKLIGHT_LVL_LIST, 0)
+        val = RadioSettingValueList(BACKLIGHT_LVL_LIST, None, tmpback)
+        blMinSetting = RadioSetting("backlight.backlight_min", "Backlight level min (BLMin)", val)
+
         # Backlight max
-        tmpback = _mem.backlight.backlight_max
-        if tmpback >= len(BACKLIGHT_LVL_LIST):
-            tmpback = 0
-        rs = RadioSetting("backlight.backlight_max",
-                          "Backlight level max (BLMax)",
-                          RadioSettingValueList(
-                              BACKLIGHT_LVL_LIST,
-                              BACKLIGHT_LVL_LIST[tmpback]))
-        basic.append(rs)
-        
+        tmpback = listDef(_mem.backlight.backlight_max, BACKLIGHT_LVL_LIST, 0)
+        val = RadioSettingValueList(BACKLIGHT_LVL_LIST, None, tmpback)
+        blMaxSetting = RadioSetting("backlight.backlight_max", "Backlight level max (BLMax)", val)
+
         # Backlight TX_RX
-        tmpback = _mem.Multi_option.Setting_backlight_on_TX_RX
-        if tmpback >= len(BACKLIGHT_TX_RX_LIST):
-            tmpback = 0
-        rs = RadioSetting("Multi_option.Setting_backlight_on_TX_RX",
-                          "Backlight on TX/RX (BltTRX)",
-                          RadioSettingValueList(
-                              BACKLIGHT_TX_RX_LIST,
-                              BACKLIGHT_TX_RX_LIST[tmpback]))
-        basic.append(rs)
+        tmpback = listDef(_mem._0x0f47.Setting_backlight_on_TX_RX, BACKLIGHT_TX_RX_LIST, 0)
+        val = RadioSettingValueList(BACKLIGHT_TX_RX_LIST, None, tmpback)
+        bltTRXSetting = RadioSetting("_0x0f47.Setting_backlight_on_TX_RX", "Backlight on TX/RX (BltTRX)", val)
 
         # Beep control
-        rs = RadioSetting(
-                "button_beep",
-                "Key press beep sound (Beep)",
-                RadioSettingValueBoolean(bool(_mem._0xe90.button_beep > 0)))
-        basic.append(rs)
+        val = RadioSettingValueBoolean(_mem._0xe90.button_beep)
+        beepSetting = RadioSetting("button_beep", "Key press beep sound (Beep)", val)
 
         # Reminding of end of talk
-        tmpalarmmode = _mem.reminding_of_end_talk_ROGER
-        if tmpalarmmode >= len(REMENDOFTALK_LIST):
-            tmpalarmmode = 0
-        rs = RadioSetting(
-                "reminding_of_end_talk_ROGER",
-                "Reminding of end of talk (Roger)",
-                RadioSettingValueList(
-                    REMENDOFTALK_LIST,
-                    REMENDOFTALK_LIST[tmpalarmmode]))
-        basic.append(rs)
-       
+        tmpalarmmode = listDef(_mem.roger_beep, REMENDOFTALK_LIST, 0)
+        val = RadioSettingValueList(REMENDOFTALK_LIST, None, tmpalarmmode)
+        rogerSetting = RadioSetting("roger_beep", "End of transmission beep (Roger)", val)
+
         # Tail tone elimination
-        rs = RadioSetting(
-                "tail_note_elimination",
-                "Tail tone elimination (STE)",
-                RadioSettingValueBoolean(
-                    bool(_mem.tail_note_elimination > 0)))
-        basic.append(rs)
-        
+        val = RadioSettingValueBoolean(_mem.ste)
+        steSetting = RadioSetting("ste", "Squelch tail elimination (STE)", val)
+
         # Repeater tail tone elimination
-        tmprte = _mem.repeater_tail_elimination
-        if tmprte >= len(RTE_LIST):
-            tmprte = 0
-        rs = RadioSetting(
-                "repeater_tail_elimination",
-                "Repeater tail tone elimination (RP STE)",
-                RadioSettingValueList(RTE_LIST, RTE_LIST[tmprte]))
-        basic.append(rs)
+        tmprte = listDef(_mem.rp_ste, RTE_LIST, 0)
+        val = RadioSettingValueList(RTE_LIST, None, tmprte)
+        rpSteSetting = RadioSetting("rp_ste", "Repeater squelch tail elimination (RP STE)", val)
 
         # AM_fix
-        rs = RadioSetting(
-                "Multi_option.Setting_AM_fix",
-                "AM reception fix (AM Fix)",
-                RadioSettingValueBoolean(
-                    bool(_mem.Multi_option.Setting_AM_fix > 0)))
-        if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
-            basic.append(rs)
+        val = RadioSettingValueBoolean(_mem._0x0f47.Setting_AM_fix)
+        amFixSetting = RadioSetting("_0x0f47.Setting_AM_fix", "AM reception fix (AM Fix)", val)
 
         # VOX
-        tmpvox = (_mem.vox_level + 1) * _mem.vox_switch
-        if tmpvox > 10:
-            tmpvox = 10
-        rs = RadioSetting("vox", "Voice-operated switch (VOX)", RadioSettingValueList(
-            VOX_LIST, VOX_LIST[tmpvox]))
-        if _mem.BUILD_OPTIONS.ENABLE_VOX:
-            basic.append(rs)
+        tmpvox = minMaxDef((_mem.vox_level + 1) * _mem.vox_switch, 0, 10, 10)
+        val = RadioSettingValueList(VOX_LIST, None, tmpvox)
+        voxSetting = RadioSetting("vox", "Voice-operated switch (VOX)", val)
 
         # RX_MODE
-        tmprxmode = (bool(_mem.crossband) << 1) + bool(_mem.dual_watch)
-        if tmprxmode >= len(RXMODE_LIST):
-            tmprxmode = 0
-        rs = RadioSetting("rx_mode", "RX Mode (RxMode)", RadioSettingValueList(
-            RXMODE_LIST, RXMODE_LIST[tmprxmode]))
-        basic.append(rs)
+        tmprxmode = listDef((bool(_mem.crossband) << 1) + bool(_mem.dual_watch), RXMODE_LIST, 0)
+        val = RadioSettingValueList(RXMODE_LIST, None, tmprxmode)
+        rxModeSetting = RadioSetting("rx_mode", "RX Mode (RxMode)", val)
 
         # VFO open
-        rs = RadioSetting("vfo_open", "Enable frequency mode",
-                          RadioSettingValueBoolean(bool(_mem.vfo_open > 0)))
-        basic.append(rs)
+        val = RadioSettingValueBoolean(_mem.freq_mode_allowed)
+        freqModeAllowedSetting = RadioSetting("freq_mode_allowed", "Frequency mode allowed", val)
 
         # Scan resume mode
-        tmpscanres = _mem.scan_resume_mode
-        if tmpscanres >= len(SCANRESUME_LIST):
-            tmpscanres = 0
-        rs = RadioSetting(
-                "scan_resume_mode",
-                "Scan resume mode (ScnRev)",
-                RadioSettingValueList(
-                    SCANRESUME_LIST,
-                    SCANRESUME_LIST[tmpscanres]))
-        basic.append(rs)
+        tmpscanres = listDef(_mem.scan_resume_mode, SCANRESUME_LIST, 0)
+        val = RadioSettingValueList(SCANRESUME_LIST, None, tmpscanres)
+        scnRevSetting = RadioSetting("scan_resume_mode", "Scan resume mode (ScnRev)", val)
 
         # Voice
-        tmpvoice = _mem.voice
-        if tmpvoice >= len(VOICE_LIST):
-            tmpvoice = 0
-        rs = RadioSetting("voice", "Voice", RadioSettingValueList(
-            VOICE_LIST, VOICE_LIST[tmpvoice]))
-        if _mem.BUILD_OPTIONS.ENABLE_VOICE:
-            basic.append(rs)
+        tmpvoice = listDef(_mem.voice, VOICE_LIST, 0)
+        val = RadioSettingValueList(VOICE_LIST, None, tmpvoice)
+        voiceSetting = RadioSetting("voice", "Voice", val)
 
         # Alarm mode
-        tmpalarmmode = _mem.alarm_mode
-        if tmpalarmmode >= len(ALARMMODE_LIST):
-            tmpalarmmode = 0
-        rs = RadioSetting("alarm_mode", "Alarm mode", RadioSettingValueList(
-            ALARMMODE_LIST, ALARMMODE_LIST[tmpalarmmode]))
-        if _mem.BUILD_OPTIONS.ENABLE_ALARM:
-            basic.append(rs)
+        tmpalarmmode = listDef(_mem.alarm_mode, ALARMMODE_LIST, 0)
+        val = RadioSettingValueList(ALARMMODE_LIST, None, tmpalarmmode)
+        alarmSetting = RadioSetting("alarm_mode", "Alarm mode", val)
 
-        # squelch
-        tmpsq = _mem.squelch
-        if tmpsq > 9:
-            tmpsq = 1
-        rs = RadioSetting("squelch", "Squelch (Sql)",
-                          RadioSettingValueInteger(0, 9, tmpsq))
-        basic.append(rs)
+################## Extra settings
 
         # S-meter
-        tmpS0 = -int(_mem.S0_S_meter_level_dbm)
-        tmpS9 = -int(_mem.S9_S_meter_level_dbm)
+        tmpS0 = -int(_mem.s0_level)
+        tmpS9 = -int(_mem.s9_level)
         if tmpS0 > -90 or tmpS0 < -200 or tmpS9 > -50 or tmpS9 < -160:
             tmpS0 = -200
             tmpS9 = -160
-        rs = RadioSetting("S0_S_meter_level_dbm",
-                          "S-meter S0 level [dBm]",
-                          RadioSettingValueInteger(-200, -90, tmpS0))
-        basic.append(rs)
-        rs = RadioSetting("S9_S_meter_level_dbm",
-                          "S-meter S9 level [dBm]",
-                          RadioSettingValueInteger(-160, -50, tmpS9))
-        basic.append(rs)
+        val = RadioSettingValueInteger(-200, -90, tmpS0)
+        s0LevelSetting = RadioSetting("s0_level", "S-meter S0 level [dBm]", val)
+        
+        val = RadioSettingValueInteger(-160, -50, tmpS9)
+        s9LevelSetting = RadioSetting("s9_level", "S-meter S9 level [dBm]", val)
 
         # Battery Type
-        tmpbtype = _mem.Battery_type
-        if tmpbtype >= len(BATTYPE_LIST): 
-            tmpbtype = 0
-        rs = RadioSetting(
-            "Battery_type", "Battery Type (BatTyp)",
-            RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype]))
-        basic.append(rs)
+        tmpbtype = listDef(_mem.Battery_type, BATTYPE_LIST, 0)
+        val = RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype])
+        batTypeSetting = RadioSetting("Battery_type", "Battery Type (BatTyp)", val)
 
-        # FM radio
-        val = RadioSettingValueString(0, 80, "Frequency [MHz]")
-        val.set_mutable(False)
-        rs = RadioSetting("fm_radio_column_descr", "Channel", val)
-        fmradio.append(rs)
+################## FM radio
+
+        appendLabel(fmradio, "Channel", "Frequency [MHz]")
       
         for i in range(1, 21):
             fmfreq = _mem.fmfreq[i-1]/10.0
@@ -2064,19 +1964,63 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         else:
             firmware = self.FIRMWARE_VERSION
 
-        val = RadioSettingValueString(0, 128, firmware)
-        val.set_mutable(False)
-        rs = RadioSetting("fw_ver", "Firmware Version", val)
-        roinfo.append(rs)
+################## Driver Info
 
-        # TODO: remove showing the driver version when it's in mainline chirp
-        # Driver version
+        appendLabel(roinfo, "Firmware Version", firmware)
+        appendLabel(roinfo, "Driver version", DRIVER_VERSION)
 
-        val = RadioSettingValueString(0, 128, DRIVER_VERSION)
-        val.set_mutable(False)
-        rs = RadioSetting("driver_ver", "Driver version", val)
-        roinfo.append(rs)
-      
+################## LAYOUT
+
+        basic.append(squelchSetting)
+        basic.append(rxModeSetting)
+        basic.append(callChannelSetting)
+        basic.append(autoKeypadLockSetting)
+        basic.append(keypadLockSetting)
+        basic.append(txTOutSetting)
+        basic.append(batSaveSetting)
+        basic.append(scnRevSetting)
+        if _mem.BUILD_OPTIONS.ENABLE_NOAA:
+            basic.append(noaaAutoScanSetting)
+        if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
+            basic.append(amFixSetting)
+
+        appendLabel(basic, "=" * 6 + " Display settings " + "=" * 300, "=" * 300)
+
+        basic.append(batTxtSetting)
+        basic.append(micBarSetting)
+        basic.append(chDispSetting)
+        basic.append(pOnMsgSetting)
+        basic.append(logo1Setting)
+        basic.append(logo2Setting)
+
+        appendLabel(basic, "=" * 6 + " Backlight settings " + "=" * 300, "=" * 300)
+
+        basic.append(backLtSetting)
+        basic.append(blMinSetting)
+        basic.append(blMaxSetting)
+        basic.append(bltTRXSetting)
+
+        appendLabel(basic, "=" * 6 + " Audio related settings " + "=" * 300, "=" * 300)
+
+        if _mem.BUILD_OPTIONS.ENABLE_VOX:
+            basic.append(voxSetting)
+        basic.append(micGainSetting)
+        basic.append(beepSetting)
+        basic.append(rogerSetting)
+        basic.append(steSetting)
+        basic.append(rpSteSetting)
+        if _mem.BUILD_OPTIONS.ENABLE_VOICE:
+            basic.append(voiceSetting)
+        if _mem.BUILD_OPTIONS.ENABLE_ALARM:
+            basic.append(alarmSetting)
+
+
+
+        extra.append(freqModeAllowedSetting)
+        extra.append(batTypeSetting)
+        extra.append(s0LevelSetting)
+        extra.append(s9LevelSetting)
+
         return top
 
     # Store details about a high-level memory to the memory map
@@ -2093,11 +2037,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if number < 200:
                 _mem2 = self._memobj.channelname[number]
                 _mem2.set_raw("\xFF" * 16)
-                _mem4.channel_attributes[number].is_scanlist1 = 0
-                _mem4.channel_attributes[number].is_scanlist2 = 0
-                _mem4.channel_attributes[number].compander = 0
-                _mem4.channel_attributes[number].is_free = 1
-                _mem4.channel_attributes[number].band = 0x7
+                _mem4.ch_attr[number].is_scanlist1 = 0
+                _mem4.ch_attr[number].is_scanlist2 = 0
+                _mem4.ch_attr[number].compander = 0
+                _mem4.ch_attr[number].is_free = 1
+                _mem4.ch_attr[number].band = 0x7
             return mem
 
         # clean the channel memory, restore some bits if it was used before
@@ -2106,11 +2050,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             _mem.set_raw("\x00" * 16)
 
         if number < 200:
-            _mem4.channel_attributes[number].is_scanlist1 = 0
-            _mem4.channel_attributes[number].is_scanlist2 = 0
-            _mem4.channel_attributes[number].compander = 0
-            _mem4.channel_attributes[number].is_free = 1
-            _mem4.channel_attributes[number].band = 0x7
+            _mem4.ch_attr[number].is_scanlist1 = 0
+            _mem4.ch_attr[number].is_scanlist2 = 0
+            _mem4.ch_attr[number].compander = 0
+            _mem4.ch_attr[number].is_free = 1
+            _mem4.ch_attr[number].band = 0x7
 
         # find band
         band = _find_band(self, mem.freq)
@@ -2139,8 +2083,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             _mem.offset = _mem.freq
         # set band
         if number < 200:
-            _mem4.channel_attributes[number].is_free = 0
-            _mem4.channel_attributes[number].band = band
+            _mem4.ch_attr[number].is_free = 0
+            _mem4.ch_attr[number].band = band
 
         # channels >200 are the 14 VFO chanells and don't have names
         if number < 200:
@@ -2182,12 +2126,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.scrambler = SCRAMBLER_LIST.index(svalue)
                 
             if sname == "compander":
-                _mem4.channel_attributes[number].compander = \
+                _mem4.ch_attr[number].compander = \
                     COMPANDER_LIST.index(svalue)
                 
             if number < 200 and sname == "scanlists":
                 tmpVal = SCANLIST_LIST.index(svalue)
-                _mem4.channel_attributes[number].is_scanlist1 = bool(tmpVal & 1)
-                _mem4.channel_attributes[number].is_scanlist2 = bool(tmpVal & 2)
+                _mem4.ch_attr[number].is_scanlist1 = bool(tmpVal & 1)
+                _mem4.ch_attr[number].is_scanlist2 = bool(tmpVal & 2)
 
         return mem
