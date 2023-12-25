@@ -218,6 +218,82 @@ char number[3];
 char unused_00[5];
 } dtmfcontact[16];
 
+struct {
+    struct {
+        #seekto 0x1E00;
+        u8 openRssiThr[10];
+        #seekto 0x1E10;
+        u8 closeRssiThr[10];
+        #seekto 0x1E20;
+        u8 openNoiseThr[10];
+        #seekto 0x1E30;
+        u8 closeNoiseThr[10];
+        #seekto 0x1E40;
+        u8 closeGlitchThr[10];
+        #seekto 0x1E50;
+        u8 openGlitchThr[10];
+    } sqlBand1_3;
+
+    struct {
+        #seekto 0x1E60;
+        u8 openRssiThr[10];
+        #seekto 0x1E70;
+        u8 closeRssiThr[10];
+        #seekto 0x1E80;
+        u8 openNoiseThr[10];
+        #seekto 0x1E90;
+        u8 closeNoiseThr[10];
+        #seekto 0x1EA0;
+        u8 closeGlitchThr[10];
+        #seekto 0x1EB0;
+        u8 openGlitchThr[10];
+    } sqlBand4_7;
+
+    #seekto 0x1EC0;
+    struct {
+        ul16 level1;
+        ul16 level2;
+        ul16 level4;
+        ul16 level6;
+    } rssiLevelsBands3_7;
+
+    struct {
+        ul16 level1;
+        ul16 level2;
+        ul16 level4;
+        ul16 level6;
+    } rssiLevelsBands1_2;
+
+    struct {
+        struct {
+            u8 lower;
+            u8 center;
+            u8 upper;
+        } low;
+        struct {
+            u8 lower;
+            u8 center;
+            u8 upper;
+        } mid;
+        struct {
+            u8 lower;
+            u8 center;
+            u8 upper;
+        } hi;
+        u8 __UNUSED[7];
+    } txp[7];
+
+    #seekto 0x1F40;
+    ul16 batLvl[6];
+
+    #seekto 0x1F50;
+    ul16 vox1Thr[10];
+
+    #seekto 0x1F68;
+    ul16 vox0Thr[10];
+} cal;
+
+
 #seekto 0x1FF0;
 struct {
 u8 ENABLE_DTMF_CALLING:1,
@@ -635,6 +711,22 @@ def _find_band(self, hz):
     return False
 
 
+# helper function
+def minMaxDef(value, minVal, maxVal, default):
+    if minVal != None and value < minVal: 
+        return default
+    if maxVal != None and value > maxVal: 
+        return default
+    return value
+
+# helper function
+def listDef(value, lst, default):
+    if isinstance(default, str):
+        default = lst.index(default)
+    if value < 0 or value >= len(lst):
+        return default
+    return value
+
 @directory.register
 class UVK5Radio(chirp_common.CloneModeRadio):
     """Quansheng UV-K5"""
@@ -1003,7 +1095,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpcomment += "FreqReverse:"+(is_frev and "ON" or "OFF")+" "
 
         # PTTID
-        pttid = _mem.dtmf_pttid
+        pttid = listDef(_mem.dtmf_pttid, PTTID_LIST, 0)
         rs = RadioSetting("pttid", "PTT ID (PTT ID)", RadioSettingValueList(
             PTTID_LIST, PTTID_LIST[pttid]))
         mem.extra.append(rs)
@@ -1389,22 +1481,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_FMRADIO:
             top.append(fmradio)
         top.append(roinfo)
-
-        # helper function
-        def minMaxDef(value, minVal, maxVal, default):
-            if minVal != None and value < minVal: 
-                return default
-            if maxVal != None and value > maxVal: 
-                return default
-            return value
-        
-        # helper function
-        def listDef(value, lst, default):
-            if isinstance(default, str):
-                default = lst.index(default)
-            if value < 0 or value >= len(lst):
-                return default
-            return value
 
         # helper function
         def appendLabel(radioSetting, label, descr = ""):
