@@ -15,12 +15,6 @@ Currently you can use modified version of CHIRP from [releases](https://github.c
 
 You can also use development version of driver [uvk5_EGZUMER.py](uvk5_egzumer.py?raw=1) (right click, "Save link as...") and load it to CHIRP manually.
 
-Tip: If you want chirp display in a other language, you will need to change the language selected on regional settings in windows, chirp read that parameter from windows to display the language. So if you want to see chirp in english.  press windows key + i, to open parameter(1), depend on what version of windows you uses and language is define, the next menu may change name, but search for Region(2), then regional format(3), in regional format, go select english. Now when you will open chirp it will display it in english. chirp not available in many language, see chirp web site to know what language is supported.
-
-![image](https://github.com/egzumer/uvk5-chirp-driver/assets/56229329/e615ed28-c9ac-4099-a7f2-489d46b5ef2d)
-
-
-
 ## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
 1. Restart CHIRP
