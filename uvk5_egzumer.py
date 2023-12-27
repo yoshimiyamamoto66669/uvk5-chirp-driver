@@ -2114,11 +2114,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem4.ch_attr[number].band = 0x7
             return mem
 
-        # clean the channel memory, restore some bits if it was used before
-        if _mem.get_raw()[0] == "\xff":
-            # this was an empty memory
-            _mem.set_raw("\x00" * 16)
-
         if number < 200:
             _mem4.ch_attr[number].is_scanlist1 = 0
             _mem4.ch_attr[number].is_scanlist2 = 0
@@ -2176,32 +2171,25 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         else:
             _mem.txpower = POWER_LOW
 
-        for setting in mem.extra:
-            sname = setting.get_name()
-            svalue = setting.value.get_value()
 
-            if sname == "busyChLockout":
-                _mem.busyChLockout = bool(svalue)
 
-            if sname == "pttid":
-                _mem.dtmf_pttid = PTTID_LIST.index(svalue)
 
-            if sname == "frev":
-                _mem.freq_reverse = bool(svalue)
+        ######### EXTRA SETTINGS
 
-            if sname == "dtmfdecode":
-                _mem.dtmf_decode = bool(svalue)
+        def getSetting(name, defVal):
+            if name in mem.extra:
+                return int(mem.extra[name].value)
+            return defVal
 
-            if sname == "scrambler":
-                _mem.scrambler = SCRAMBLER_LIST.index(svalue)
-                
-            if sname == "compander":
-                _mem4.ch_attr[number].compander = \
-                    COMPANDER_LIST.index(svalue)
-                
-            if number < 200 and sname == "scanlists":
-                tmpVal = SCANLIST_LIST.index(svalue)
-                _mem4.ch_attr[number].is_scanlist1 = bool(tmpVal & 1)
-                _mem4.ch_attr[number].is_scanlist2 = bool(tmpVal & 2)
+        _mem.busyChLockout = getSetting("busyChLockout", False)
+        _mem.dtmf_pttid = getSetting("pttid", 0)
+        _mem.freq_reverse = getSetting("frev", False)
+        _mem.dtmf_decode = getSetting("dtmfdecode", False)
+        _mem.scrambler = getSetting("scrambler", 0)
+        _mem4.ch_attr[number].compander = getSetting("compander", 0)
+        if number < 200:
+            tmpVal = getSetting("scanlists", 0)
+            _mem4.ch_attr[number].is_scanlist1 = bool(tmpVal & 1)
+            _mem4.ch_attr[number].is_scanlist2 = bool(tmpVal & 2)
 
         return mem
