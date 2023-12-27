@@ -965,7 +965,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # We'll also look at the channel attributes if a memory has them
         tmpscn = SCANLIST_LIST[0]
-        tmpComp = COMPANDER_LIST[0]
+        tmpComp = 0
         if number < 200:
             _mem3 = self._memobj.ch_attr[number]
             # free memory bit
@@ -974,7 +974,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # scanlists
             tempVal = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
             tmpscn = SCANLIST_LIST[tempVal]
-            tmpComp = COMPANDER_LIST[_mem3.compander]
+            tmpComp = listDef(_mem3.compander, COMPANDER_LIST, 0)
 
         if is_empty:
             mem.empty = True
@@ -1083,43 +1083,37 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         mem.extra = RadioSettingGroup("Extra", "extra")
 
         # BusyCL
-        is_bclo = bool(_mem.busyChLockout)
-        rs = RadioSetting("busyChLockout", "Busy Ch Lockout    (BusyCL)", RadioSettingValueBoolean(is_bclo))
+        val = RadioSettingValueBoolean(_mem.busyChLockout)
+        rs = RadioSetting("busyChLockout", "Busy Ch Lockout    (BusyCL)", val)
         mem.extra.append(rs)
-        tmpcomment += "BusyCL:"+(is_bclo and "ON" or "OFF")+" "
 
-        # Frequency reverse - whatever that means, don't see it in the manual
-        is_frev = bool(_mem.freq_reverse > 0)
-        rs = RadioSetting("frev", "Reverse Frequencies", RadioSettingValueBoolean(is_frev))
+        # Frequency reverse
+        val = RadioSettingValueBoolean(_mem.freq_reverse)
+        rs = RadioSetting("frev", "Reverse Frequencies", val)
         mem.extra.append(rs)
-        tmpcomment += "FreqReverse:"+(is_frev and "ON" or "OFF")+" "
 
         # PTTID
         pttid = listDef(_mem.dtmf_pttid, PTTID_LIST, 0)
-        rs = RadioSetting("pttid", "PTT ID (PTT ID)", RadioSettingValueList(
-            PTTID_LIST, PTTID_LIST[pttid]))
+        val = RadioSettingValueList(PTTID_LIST, None, pttid)
+        rs = RadioSetting("pttid", "PTT ID (PTT ID)", val)
         mem.extra.append(rs)
-        tmpcomment += "PTTid:"+PTTID_LIST[pttid]+" "
 
         # DTMF DECODE
-        is_dtmf = bool(_mem.dtmf_decode > 0)
-        rs = RadioSetting("dtmfdecode", "DTMF decode (D Decd)",
-                          RadioSettingValueBoolean(is_dtmf))
-        mem.extra.append(rs)
-        tmpcomment += "DTMFdecode:"+(is_dtmf and "ON" or "OFF") + " "
+        val = RadioSettingValueBoolean(_mem.dtmf_decode)
+        rs = RadioSetting("dtmfdecode", "DTMF decode (D Decd)", val)
+        if self._memobj.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
+            mem.extra.append(rs)
 
         # Scrambler
-        enc = _mem.scrambler if _mem.scrambler < len(SCRAMBLER_LIST) else 0
-        rs = RadioSetting("scrambler", "Scrambler (Scramb)", RadioSettingValueList(
-            SCRAMBLER_LIST, SCRAMBLER_LIST[enc]))
+        enc = listDef(_mem.scrambler, SCRAMBLER_LIST, 0)
+        val = RadioSettingValueList(SCRAMBLER_LIST, None, enc)
+        rs = RadioSetting("scrambler", "Scrambler (Scramb)", val)
         mem.extra.append(rs)
-        tmpcomment += "Scrambler:" + SCRAMBLER_LIST[enc] + " "
 
         # Compander
-        rs = RadioSetting("compander", "Compander (Compnd)", RadioSettingValueList(
-            COMPANDER_LIST, tmpComp))
+        val = RadioSettingValueList(COMPANDER_LIST, None, tmpComp)
+        rs = RadioSetting("compander", "Compander (Compnd)", val)
         mem.extra.append(rs)
-        tmpcomment += "Compander:" + tmpComp + " "
 
         rs = RadioSetting("scanlists", "Scanlists (SList)", RadioSettingValueList(
             SCANLIST_LIST, tmpscn))
