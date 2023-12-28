@@ -120,6 +120,16 @@ u8 backlight_time;
 u8 ste;
 u8 freq_mode_allowed;
 
+#seekto 0xe80;
+u8 ScreenChannel_0;
+u8 MrChannel_0;
+u8 FreqChannel_0;
+u8 ScreenChannel_1;
+u8 MrChannel_1;
+u8 FreqChannel_1;
+u8 NoaaChannel_0;
+u8 NoaaChannel_1;
+
 #seekto 0xe90;
 struct {
   u8 keyM_longpress_action:7,
@@ -412,6 +422,8 @@ SCANRESUME_LIST = ["Listen 5 seconds and resume (TIMEOUT)",
 WELCOME_LIST = ["FULL", "MESSAGE", "VOLTAGE", "NONE"]
 VOICE_LIST = ["OFF", "Chinese", "English"]
 
+# ACTIVE CHANNEL
+TX_VFO_LIST = ["ACTIVE CHANNEL A", "ACTIVE CHANNEL B"]
 ALARMMODE_LIST = ["SITE", "TONE"]
 REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
 RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
@@ -1012,7 +1024,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # actually the step and duplex are overwritten by chirp based on
             # bandplan. they are here to document sane defaults for IARU r1
             # mem.tuning_step = 25.0
-            # mem.duplex = "OFF"
+            # mem.duplex = "off"
 
             return mem
 
@@ -1129,7 +1141,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 continue
 
             # basic settings
+                            
+            # FREQ e80 ScreenChannel_0
+            if element.get_name() == "FREQ_0":
+                _mem.ScreenChannel_0 = int(element.value)-1
 
+            # FREQ e83
+            if element.get_name() == "FREQ_1":
+                _mem.ScreenChannel_1 = int(element.value)-1
+                
+            # TX_VFO  channel selected A,B 
+            if element.get_name() == "TX_VFO":
+                _mem.TX_VFO = TX_VFO_LIST.index(str(element.value))
+          
             # call channel
             if element.get_name() == "call_channel":
                 _mem.call_channel = int(element.value)-1
@@ -1805,7 +1829,24 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
 ################## Basic settings
 
-        # Call channel
+        # FREQ 0xe80 ScreenChannel_0
+        tmpfreq0 = minMaxDef((_mem.ScreenChannel_0 + 1), 1, 207, 1)
+        val = RadioSettingValueInteger(1, 207, tmpfreq0)
+        freq0Setting = RadioSetting("FREQ_0", "Frequency Channel A, from Memories TAB. 1-207 include(F1 to F7)", val)
+        if (_mem.ScreenChannel_0 >  0) :
+               _mem.ScreenChannel_0 -= 1
+
+        # FREQ 0xe83 ScreenChannel_1
+        tmpfreq1 = minMaxDef((_mem.ScreenChannel_1 + 1), 1, 207, 1) 
+        val = RadioSettingValueInteger(1, 207, tmpfreq1)
+        freq1Setting = RadioSetting("FREQ_1", "Frequency Channel B, from Memories TAB. 1-207 include(F1 to F7)", val)
+        if (_mem.ScreenChannel_1 >  0) :
+               _mem.ScreenChannel_1 -= 1
+        
+        # TX_VFO 0xeab
+        tmptxvfo = listDef(_mem.TX_VFO, TX_VFO_LIST, "ACTIVE CHANNEL A")
+        val = RadioSettingValueList(TX_VFO_LIST, None, tmptxvfo)
+        TX_VFO_Setting = RadioSetting("TX_VFO", "Active Channel A or B, arrow(" + '\u25BA' +")" , val)
 
         # squelch
         tmpsq = minMaxDef(_mem.squelch, 0, 9, 1)
@@ -2055,7 +2096,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             basic.append(amFixSetting)
 
         appendLabel(basic, "=" * 6 + " Display settings " + "=" * 300, "=" * 300)
-
+        
+        basic.append(freq0Setting) 
+        basic.append(freq1Setting)
+        basic.append(TX_VFO_Setting)
         basic.append(batTxtSetting)
         basic.append(micBarSetting)
         basic.append(chDispSetting)
@@ -2135,7 +2179,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         _mem.freq = mem.freq/10
         _mem.offset = mem.offset/10
 
-        if mem.duplex == "OFF" or mem.duplex == "":
+        if mem.duplex == "off" or mem.duplex == "":
             _mem.offset = 0
             _mem.offsetDir = 0
         elif mem.duplex == '-':
