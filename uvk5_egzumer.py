@@ -2179,7 +2179,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         _mem.freq = mem.freq/10
         _mem.offset = mem.offset/10
 
-        if mem.duplex == "off" or mem.duplex == "":
+        if mem.duplex == "":
             _mem.offset = 0
             _mem.offsetDir = 0
         elif mem.duplex == '-':
