@@ -121,14 +121,14 @@ u8 ste;
 u8 freq_mode_allowed;
 
 #seekto 0xe80;
-u8 ScreenChannel_0;
-u8 MrChannel_0;
-u8 FreqChannel_0;
-u8 ScreenChannel_1;
-u8 MrChannel_1;
-u8 FreqChannel_1;
-u8 NoaaChannel_0;
-u8 NoaaChannel_1;
+u8 ScreenChannel_A;
+u8 MrChannel_A;
+u8 FreqChannel_A;
+u8 ScreenChannel_B;
+u8 MrChannel_B;
+u8 FreqChannel_B;
+u8 NoaaChannel_A;
+u8 NoaaChannel_B;
 
 #seekto 0xe90;
 struct {
@@ -1142,15 +1142,25 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # basic settings
                             
-            # FREQ e80 ScreenChannel_0
-            if element.get_name() == "FREQ_0":
-                _mem.ScreenChannel_0 = int(element.value) - 1
-                _mem.FreqChannel_0 = _mem.ScreenChannel_0
+            # VFO_A e80 ScreenChannel_A
+            if element.get_name() == "VFO_A_chn":
+                _mem.ScreenChannel_A = int(element.value)
+                if _mem.ScreenChannel_A < 200:
+                    _mem.MrChannel_A = _mem.ScreenChannel_A
+                elif _mem.ScreenChannel_A < 207:
+                    _mem.FreqChannel_A = _mem.ScreenChannel_A
+                else:
+                    _mem.NoaaChannel_A = _mem.ScreenChannel_A
 
-            # FREQ e83
-            if element.get_name() == "FREQ_1":
-                _mem.ScreenChannel_1 = int(element.value) - 1
-                _mem.FreqChannel_1 = _mem.ScreenChannel_1
+            # VFO_B e83
+            if element.get_name() == "VFO_B_chn":
+                _mem.ScreenChannel_B = int(element.value)
+                if _mem.ScreenChannel_B < 200:
+                    _mem.MrChannel_B = _mem.ScreenChannel_B
+                elif _mem.ScreenChannel_B < 207:
+                    _mem.FreqChannel_B = _mem.ScreenChannel_B
+                else:
+                    _mem.NoaaChannel_B = _mem.ScreenChannel_B
                 
             # TX_VFO  channel selected A,B 
             if element.get_name() == "TX_VFO":
@@ -1831,15 +1841,20 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
 ################## Basic settings
 
-        # FREQ 0xe80 ScreenChannel_0
-        tmpfreq0 = minMaxDef(_mem.ScreenChannel_0 + 1, 1, 207, 1)
-        val = RadioSettingValueInteger(1, 207, tmpfreq0)
-        freq0Setting = RadioSetting("FREQ_0", "VFO A current channel/band (F1-F7 is 201-207)", val)
+        # ScreenChannel 0/1
+        chList = []
+        for ch in range(1, 201): chList.append("Channel M" + str(ch))
+        for band in range(1, 8): chList.append("Band F" + str(band))
+        if _mem.BUILD_OPTIONS.ENABLE_NOAA:
+            for band in range(1, 11): chList.append("NOAA N" + str(band))
 
-        # FREQ 0xe83 ScreenChannel_1
-        tmpfreq1 = minMaxDef(_mem.ScreenChannel_1 + 1, 1, 207, 1) 
-        val = RadioSettingValueInteger(1, 207, tmpfreq1)
-        freq1Setting = RadioSetting("FREQ_1", "VFO B current channel/band (F1-F7 is 201-207)", val)
+        tmpfreq0 = listDef(_mem.ScreenChannel_A, chList, 0)
+        val = RadioSettingValueList(chList, None, tmpfreq0)
+        freq0Setting = RadioSetting("VFO_A_chn", "VFO A current channel/band", val)
+
+        tmpfreq1 = listDef(_mem.ScreenChannel_B, chList, 0) 
+        val = RadioSettingValueList(chList, None, tmpfreq1)
+        freq1Setting = RadioSetting("VFO_B_chn", "VFO B current channel/band", val)
 
         # TX_VFO 0xeab
         tmptxvfo = listDef(_mem.TX_VFO, TX_VFO_LIST, "A")
