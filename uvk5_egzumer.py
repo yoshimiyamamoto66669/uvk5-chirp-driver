@@ -142,7 +142,7 @@ u8 key2_longpress_action;
 u8 scan_resume_mode;
 u8 auto_keypad_lock;
 u8 power_on_dispmode;
-u8 password[4];
+ul32 password;
 
 #seekto 0xea0;
 u8 voice;
@@ -1282,6 +1282,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             if element.get_name() == "s9_level":
                 _mem.s9_level = -int(element.value)
+
+            if element.get_name() == "password":
+                if element.value.get_value() == None or element.value == "":
+                    _mem.password = 0xFFFFFFFF
+                else:
+                    _mem.password = int(element.value)
+
             # Alarm mode
             if element.get_name() == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
@@ -1490,15 +1497,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     def get_settings(self):
         _mem = self._memobj
         basic = RadioSettingGroup("basic", "Basic Settings")
-        extra = RadioSettingGroup("basic", "Extra Settings")
-        keya = RadioSettingGroup("keya", "Programmable keys")
+        extra = RadioSettingGroup("basic", "Advanced Settings")
+        keya = RadioSettingGroup("keya", "Programmable Keys")
         dtmf = RadioSettingGroup("dtmf", "DTMF Settings")
         dtmfc = RadioSettingGroup("dtmfc", "DTMF Contacts")
         scanl = RadioSettingGroup("scn", "Scan Lists")
         unlock = RadioSettingGroup("unlock", "Unlock Settings")
         fmradio = RadioSettingGroup("fmradio", "FM Radio")
 
-        roinfo = RadioSettingGroup("roinfo", "Driver information")
+        roinfo = RadioSettingGroup("roinfo", "Driver Information")
         top = RadioSettings()
         top.append(basic)
         top.append(extra)
@@ -2019,6 +2026,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueList(BATTYPE_LIST, BATTYPE_LIST[tmpbtype])
         batTypeSetting = RadioSetting("Battery_type", "Battery Type (BatTyp)", val)
 
+        # Power on password
+        def validate_password(value):
+            value = value.strip(" ")
+            if value.isdigit(): 
+                return value.zfill(6)
+            elif value != "":
+                raise InvalidValueError("Power on password can only have digits")
+
+        pswdStr = str(int(_mem.password)).zfill(6) if _mem.password < 1000000 else ""
+        val = RadioSettingValueString(0, 6, pswdStr)
+        val.set_validate_callback(validate_password)
+        pswdSetting = RadioSetting("password", "Power on password", val)
+
 ################## FM radio
 
         appendLabel(fmradio, "Channel", "Frequency [MHz]")
@@ -2148,6 +2168,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         extra.append(batTypeSetting)
         extra.append(s0LevelSetting)
         extra.append(s9LevelSetting)
+        if _mem.BUILD_OPTIONS.ENABLE_PWRON_PASSWORD:
+            extra.append(pswdSetting)
 
         return top
 
