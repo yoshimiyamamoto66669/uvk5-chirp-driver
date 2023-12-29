@@ -1534,12 +1534,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         def GetActualKeyAction(actionNum):
             hasAlarm = self._memobj.BUILD_OPTIONS.ENABLE_ALARM
             has1750 = self._memobj.BUILD_OPTIONS.ENABLE_TX1750
+            hasFlashlight = self._memobj.BUILD_OPTIONS.ENABLE_FLASHLIGHT
             lst = KEYACTIONS_LIST.copy()
             if not hasAlarm:
                 lst.remove("Alarm")
             if not has1750:
                 lst.remove("1750Hz tone")
-
+            if not hasFlashlight:
+                lst.remove("Flashlight")
+              
             actionNum = int(actionNum)
             if actionNum >= len(KEYACTIONS_LIST) or KEYACTIONS_LIST[actionNum] not in lst:
                 actionNum = 0
