@@ -1,0 +1,105 @@
+on:
+  push:
+
+env:
+  CHIRP_DIR: ${{github.workspace}}\temp\chirp
+  BASH: C:\tools\cygwin\bin\bash
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+
+      - name: "Checkout repository"
+        uses: actions/checkout@v3
+
+      - name: "Install MSVC"
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: "Install Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: 'chirp\requirements-dev.txt'
+
+      - name: "Instal Python packages"
+        run: pip install -r chirp\requirements-dev.txt
+
+      - name: "Download PyInstaller"
+        uses: robinraju/release-downloader@v1.8
+        with: 
+          repository: "pyinstaller/pyinstaller"
+          latest: true
+          zipBall: true
+          out-file-path: "temp"
+          extract: true
+
+      - name: "Build PyInstaller"
+        run: > 
+          cd temp\pyinstaller-pyinstaller-*\bootloader && 
+          python.exe ./waf all --target-arch=64bit && 
+          cd .. 
+          && pip install .
+
+      - name: "Install Cygwin"
+        uses: egor-tensin/setup-cygwin@v4
+        with:
+          packages: make gettext
+
+      - name: "Prepare CHIRP repository"
+        run: > 
+          New-Item -ItemType Directory -Force -Path temp && 
+          cd temp && 
+          git clone https://github.com/kk7ds/chirp.git &&
+          Copy-Item -Path "${{github.workspace}}\chirp\Makefile" -Destination "${{env.CHIRP_DIR}}\chirp\locale\" -Force &&
+          Copy-Item -Path "${{github.workspace}}\chirp\chirp.patch" -Destination "${{env.CHIRP_DIR}}\" -Force &&
+          Copy-Item -Path "${{github.workspace}}\uvk5_egzumer.py" -Destination "${{env.CHIRP_DIR}}\chirp\drivers\" -Force &&
+          cd chirp &&
+          git apply chirp.patch;
+          if ("${{github.ref}}" -like "refs/tags/v*") {
+          $content = Get-Content -Path "chirp\__init__.py" -Raw;
+          $content = $content -replace 'CHIRP_VERSION = "py3dev"', "CHIRP_VERSION = `"${{github.ref_name}}`"";
+          Set-Content -Path "chirp\__init__.py" -Value $content;
+          }
+          
+      - name: "Build CHIRP locale"
+        run: >
+          ${{env.BASH}} --login -c "cd '${{env.CHIRP_DIR}}\chirp\locale'; make" &&
+          ${{env.BASH}} --login -c "cd '${{env.CHIRP_DIR}}'; find chirp/locale/ -maxdepth 1 -type f -delete"
+
+      - name: "Build CHIRP"
+        run: >
+          cd "${{env.CHIRP_DIR}}" &&
+          pyinstaller
+          --noconfirm
+          --onefile
+          --windowed
+          --icon "chirp/share/chirp.ico"
+          --name "CHIRP_egzumer"
+          --hidden-import "wx"
+          --hidden-import "wx._xml"
+          --hidden-import "importlib-resources"
+          --add-data "chirp/share;chirp/share/"
+          --add-data "chirp/stock_configs;chirp/stock_configs/"
+          --add-data "chirp/locale;chirp/locale/"
+          --add-data "chirp/drivers;chirp/drivers/"
+          "chirpwx.py";
+
+      - name: 'Upload exe Artifact'
+        uses: actions/upload-artifact@v3
+        with:
+          name: CHIRP_egzumer
+          path: ${{env.CHIRP_DIR}}\dist\CHIRP_egzumer.exe
+
+      - name: Upload onefile to release
+        if: ${{ startsWith(github.ref, 'refs/tags/v') }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{env.CHIRP_DIR}}\dist\CHIRP_egzumer.exe
+          asset_name: CHIRP_egzumer.exe
+          tag: ${{ github.ref }}
+          overwrite: true
+          release_name: release ${{ github.ref_name }}

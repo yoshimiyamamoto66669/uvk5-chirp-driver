@@ -1,0 +1,9 @@
+future 
+six 
+wxPython 
+pypiwin32 
+pyserial 
+requests 
+yattag 
+wheel 
+importlib-resources
