@@ -15,6 +15,9 @@ Currently you can use modified version of CHIRP from [releases](https://github.c
 
 You can also use development version of driver [uvk5_EGZUMER.py](uvk5_egzumer.py?raw=1) (right click, "Save link as...") and load it to CHIRP manually.
 
+> [!WARNING]
+> Set the `UV-K5 (egzumer)` radio model in the CHIRP before you upload/download a configuration.
+
 ## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
 1. Restart CHIRP
