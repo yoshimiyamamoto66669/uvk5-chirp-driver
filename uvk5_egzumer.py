@@ -2065,53 +2065,40 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 raise InvalidValueError(msg)
             return value
         
-        tmpflock = _mem.int_flock
-        if tmpflock >= len(FLOCK_LIST):
-            tmpflock = 0
-        val = RadioSettingValueList(FLOCK_LIST, FLOCK_LIST[tmpflock])
-        rs = RadioSetting("int_flock", "TX Frequency Lock (F Lock)", val)
+        tmpflock = listDef(_mem.int_flock, FLOCK_LIST, 0)
+        val = RadioSettingValueList(FLOCK_LIST, None, tmpflock)
         val.set_validate_callback(validate_int_flock)
+        rs = RadioSetting("int_flock", "TX Frequency Lock (F Lock)", val)
         unlock.append(rs)
 
-        # 200TX
-        rs = RadioSetting("int_200tx", "Unlock 174-350MHz TX (Tx 200)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_200tx > 0)))
+        val = RadioSettingValueBoolean(_mem.int_200tx)
+        rs = RadioSetting("int_200tx", "Unlock 174-350MHz TX (Tx 200)", val)
         unlock.append(rs)
 
-        # 350TX
-        rs = RadioSetting("int_350tx", "Unlock 350-400MHz TX (Tx 350)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_350tx > 0)))
+        val = RadioSettingValueBoolean(_mem.int_350tx)
+        rs = RadioSetting("int_350tx", "Unlock 350-400MHz TX (Tx 350)", val)
         unlock.append(rs)
 
-        # 500TX
-        rs = RadioSetting("int_500tx", "Unlock 500-600MHz TX (Tx 500)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_500tx > 0)))
+        val = RadioSettingValueBoolean(_mem.int_500tx)
+        rs = RadioSetting("int_500tx", "Unlock 500-600MHz TX (Tx 500)", val)
         unlock.append(rs)
 
-        # 350EN
-        rs = RadioSetting("int_350en", "Unlock 350-400MHz RX (350 En)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_350en > 0)))
+        val = RadioSettingValueBoolean(_mem.int_350en)
+        rs = RadioSetting("int_350en", "Unlock 350-400MHz RX (350 En)", val)
         unlock.append(rs)
 
-        # Scrambler enable
-        rs = RadioSetting("int_scren", "Scrambler enabled (ScraEn)",
-                          RadioSettingValueBoolean(
-                              bool(_mem.int_scren > 0)))
+        val = RadioSettingValueBoolean(_mem.int_scren)
+        rs = RadioSetting("int_scren", "Scrambler enabled (ScraEn)", val)
         unlock.append(rs)
 
-        # readonly info
-        # Firmware
+
+################## Driver Info
+
         if self.FIRMWARE_VERSION == "":
             firmware = "To get the firmware version please download"
             "the image from the radio first"
         else:
             firmware = self.FIRMWARE_VERSION
-
-################## Driver Info
 
         appendLabel(roinfo, "Firmware Version", firmware)
         appendLabel(roinfo, "Driver version", DRIVER_VERSION)
