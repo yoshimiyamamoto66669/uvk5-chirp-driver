@@ -1513,7 +1513,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if element.get_name() == "keyM_longpress_action":
                 _mem._0xe90.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
-
+                
 
     def get_settings(self):
         _mem = self._memobj
@@ -1541,7 +1541,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             top.append(fmradio)
         top.append(roinfo)
         if self.just_downloaded:
-            top.append(calibration)  
+            top.append(calibration)
 
         # helper function
         def appendLabel(radioSetting, label, descr = ""):
@@ -2028,111 +2028,142 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         radioSetting = RadioSetting("upload_calibration", "Upload calibration", val)
         calibration.append(radioSetting)
 
+
+
+        radioSettingGroup = RadioSettingGroup("squelch_calibration", "Squelch")
+        calibration.append(radioSettingGroup)
+
         bands = {"sqlBand1_3": "Frequency Band 1-3", "sqlBand4_7": "Frequency Band 4-7"}
         for band in bands:
-            appendLabel(calibration, "=" * 6 + " " + bands[band] + " " + "=" * 300, "=" * 300)
+            appendLabel(radioSettingGroup, "=" * 6 + " " + bands[band] + " " + "=" * 300, "=" * 300)
             for sql in range(0, 10):
-                postfix = "_" + band + "sql" + str(sql + 1)
-                appendLabel(calibration, "Squelch " + str(sql + 1))
+                prefix = band + "."
+                postfix = "[" + str(sql) + "]"
+                appendLabel(radioSettingGroup, "Squelch " + str(sql + 1))
 
                 tempval = minMaxDef(_mem.cal[band].openRssiThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("openRssiThr" + postfix, "RSSI threshold open", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "openRssiThr" + postfix, "RSSI threshold open", val)
+                radioSettingGroup.append(radioSetting)
 
                 tempval = minMaxDef(_mem.cal[band].closeRssiThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("closeRssiThr" + postfix, "RSSI threshold close", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "closeRssiThr" + postfix, "RSSI threshold close", val)
+                radioSettingGroup.append(radioSetting)
 
                 tempval = minMaxDef(_mem.cal[band].openNoiseThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("openNoiseThr" + postfix, "Noise threshold open", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "openNoiseThr" + postfix, "Noise threshold open", val)
+                radioSettingGroup.append(radioSetting)
 
                 tempval = minMaxDef(_mem.cal[band].closeNoiseThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("closeNoiseThr" + postfix, "Noise threshold close", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "closeNoiseThr" + postfix, "Noise threshold close", val)
+                radioSettingGroup.append(radioSetting)
 
                 tempval = minMaxDef(_mem.cal[band].openGlitchThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("openGlitchThr" + postfix, "Glitch threshold open", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "openGlitchThr" + postfix, "Glitch threshold open", val)
+                radioSettingGroup.append(radioSetting)
                 
                 tempval = minMaxDef(_mem.cal[band].closeGlitchThr[sql], 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting("closeGlitchThr" + postfix, "Glitch threshold close", val)
-                calibration.append(radioSetting)
+                radioSetting = RadioSetting(prefix + "closeGlitchThr" + postfix, "Glitch threshold close", val)
+                radioSettingGroup.append(radioSetting)
+
+
+
+        radioSettingGroup = RadioSettingGroup("rssi_level_calibration", "RSSI levels")
+        calibration.append(radioSettingGroup)
 
         bands = {"rssiLevelsBands1_2": "1-2 ", "rssiLevelsBands3_7": "3-7 "}
         for band in bands:
-            appendLabel(calibration, "=" * 6 + " RSSI levels for QS original small bar graph, bands " + bands[band] + "=" * 300, "=" * 300)
+            appendLabel(radioSettingGroup, "=" * 6 + " RSSI levels for QS original small bar graph, bands " + bands[band] + "=" * 300, "=" * 300)
             for lvl in [1, 2, 4, 6]:
-                name = band + "_lvl" + str(lvl)
+                name = band + ".level" + str(lvl)
                 tempval = minMaxDef(_mem.cal[band]["level"+str(lvl)], 0, 65535, 0)
                 val = RadioSettingValueInteger(0, 65535, tempval)
                 radioSetting = RadioSetting(name, "Level " + str(lvl), val)
-                calibration.append(radioSetting)
+                radioSettingGroup.append(radioSetting)
+
+
+
+        radioSettingGroup = RadioSettingGroup("tx_power_calibration", "TX power")
+        calibration.append(radioSettingGroup)
 
         for band in range(0,7):
-            appendLabel(calibration, "=" * 6 + " TX power band " + str(band+1) + " " + "=" * 300, "=" * 300)
+            appendLabel(radioSettingGroup, "=" * 6 + " TX power band " + str(band+1) + " " + "=" * 300, "=" * 300)
             powers = {"low": "Low", "mid": "Medium", "hi": "High"}
             for pwr in powers:
-                appendLabel(calibration, powers[pwr])
+                appendLabel(radioSettingGroup, powers[pwr])
                 bounds = ["lower", "center", "upper"]
                 for bound in bounds:
-                    name = "txp_band" + str(band) + "_" + pwr + "_" + bound
+                    name = "txp[" + str(band) + "]." + pwr + "." + bound
                     tempval = minMaxDef(_mem.cal.txp[band][pwr][bound], 0, 255, 0)
                     val = RadioSettingValueInteger(0, 255, tempval)
                     radioSetting = RadioSetting(name, bound.capitalize(), val)
-                    calibration.append(radioSetting)
+                    radioSettingGroup.append(radioSetting)
 
-        appendLabel(calibration, "=" * 6 + " Battery levels " + "=" * 300, "=" * 300)
+
+
+        radioSettingGroup = RadioSettingGroup("battery_calibration", "Battery")
+        calibration.append(radioSettingGroup)                    
+
         for lvl in range(0,6):
-            name = "batLvl" + str(lvl)
+            name = "batLvl[" + str(lvl) + "]"
             tempVal = minMaxDef(_mem.cal.batLvl[lvl], 0, 4999, 4999)
             val = RadioSettingValueInteger(0, 4999, tempVal)
             radioSetting = RadioSetting(name, "Level " + str(lvl) + (" (voltage calibration)" if lvl==3 else ""), val)
-            calibration.append(radioSetting)
+            radioSettingGroup.append(radioSetting)
 
-        appendLabel(calibration, "=" * 6 + " VOX thresholds " + "=" * 300, "=" * 300)
+
+
+        radioSettingGroup = RadioSettingGroup("vox_calibration", "VOX")
+        calibration.append(radioSettingGroup)      
+
         for lvl in range(0,10):
-            appendLabel(calibration, "Level " + str(lvl + 1))
+            appendLabel(radioSettingGroup, "Level " + str(lvl + 1))
 
-            name = "vox1Thr" + str(lvl)
+            name = "vox1Thr[" + str(lvl) + "]"
             val = RadioSettingValueInteger(0, 65535, _mem.cal.vox1Thr[lvl])
             radioSetting = RadioSetting(name, "On", val)
-            calibration.append(radioSetting)
+            radioSettingGroup.append(radioSetting)
 
-            name = "vox0Thr" + str(lvl)
+            name = "vox0Thr[" + str(lvl) + "]"
             val = RadioSettingValueInteger(0, 65535, _mem.cal.vox0Thr[lvl])
             radioSetting = RadioSetting(name, "Off", val)
-            calibration.append(radioSetting)
+            radioSettingGroup.append(radioSetting)
 
-        appendLabel(calibration, "=" * 6 + " Microphone sensitivity " + "=" * 300, "=" * 300)
+
+
+        radioSettingGroup = RadioSettingGroup("mic_calibration", "Microphone sensitivity")
+        calibration.append(radioSettingGroup)
+
         for lvl in range(0,5):
-            name = "micLevel" + str(lvl)
+            name = "micLevel[" + str(lvl) + "]"
             tempval = minMaxDef(_mem.cal.micLevel[lvl], 0, 31, 31)
             val = RadioSettingValueInteger(0, 31, _mem.cal.micLevel[lvl])
             radioSetting = RadioSetting(name, "Level " + str(lvl), val)
-            calibration.append(radioSetting)
+            radioSettingGroup.append(radioSetting)
 
-        appendLabel(calibration, "=" * 300, "=" * 300)
+
+        radioSettingGroup = RadioSettingGroup("other_calibration", "Other")
+        calibration.append(radioSettingGroup)      
+
         tempVal = minMaxDef(_mem.cal.xtalFreqLow, -1000, 1000, 0)
         val = RadioSettingValueInteger(-1000, 1000, tempVal)
-        radioSetting = RadioSetting("cal.xtalFreqLow", "Xtal frequecy low", val)
-        calibration.append(radioSetting)
+        radioSetting = RadioSetting("xtalFreqLow", "Xtal frequecy low", val)
+        radioSettingGroup.append(radioSetting)
 
         tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 63, 58)
         val = RadioSettingValueInteger(0, 63, tempVal)
-        radioSetting = RadioSetting("cal.volumeGain", "Volume gain", val)
-        calibration.append(radioSetting)
+        radioSetting = RadioSetting("volumeGain", "Volume gain", val)
+        radioSettingGroup.append(radioSetting)
 
         tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 15, 8)
         val = RadioSettingValueInteger(0, 15, tempVal)
-        radioSetting = RadioSetting("cal.dacGain", "DAC gain", val)
-        calibration.append(radioSetting)
+        radioSetting = RadioSetting("dacGain", "DAC gain", val)
+        radioSettingGroup.append(radioSetting)
 
 ################## LAYOUT
 
