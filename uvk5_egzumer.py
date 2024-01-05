@@ -28,6 +28,7 @@
 
 import struct
 import logging
+import wx
                 
 from chirp import chirp_common, directory, bitwise, memmap, errors, util
 from chirp.settings import RadioSetting, RadioSettingGroup, \
@@ -297,6 +298,16 @@ struct {
 
     #seekto 0x1F68;
     ul16 vox0Thr[10];
+
+    #seekto 0x1F80;
+    u8 micLevel[5];
+
+    #seekto 0x1F88;
+    il16 xtalFreqLow;
+
+    #seekto 0x1F8E;
+    u8 volumeGain;
+    u8 dacGain;
 } cal;
 
 
@@ -674,7 +685,8 @@ def do_download(radio):
             addr += MEM_BLOCK
         else:
             raise errors.RadioError("Memory download incomplete")
-
+        
+    radio.just_downloaded = True
     return memmap.MemoryMapBytes(eeprom)
 
 
@@ -683,8 +695,17 @@ def do_upload(radio):
     serport.timeout = 0.5
     status = chirp_common.Status()
     status.cur = 0
-    status.max = PROG_SIZE
     status.msg = "Uploading to radio"
+
+    if radio.upload_calibration:
+        status.max = MEM_SIZE-PROG_SIZE
+        startAddr = PROG_SIZE
+        stopAddr = MEM_SIZE
+    else:
+        status.max = PROG_SIZE
+        startAddr = 0
+        stopAddr = PROG_SIZE
+
     radio.status_fn(status)
 
     f = _sayhello(serport)
@@ -693,11 +714,11 @@ def do_upload(radio):
     else:
         return False
 
-    addr = 0
-    while addr < PROG_SIZE:
+    addr = startAddr
+    while addr < stopAddr:
         o = radio.get_mmap()[addr:addr+MEM_BLOCK]
         _writemem(serport, o, addr)
-        status.cur = addr
+        status.cur = addr - startAddr
         radio.status_fn(status)
         if o:
             addr += MEM_BLOCK
@@ -743,6 +764,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     BAUD_RATE = 38400
     NEEDS_COMPAT_SERIAL = False
     FIRMWARE_VERSION = ""
+
+    just_downloaded = False
+    upload_calibration = False
 
     def Get_VFO_CHANNEL_NAMES(self):
         isWide = self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX
@@ -1490,16 +1514,18 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem._0xe90.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 
+
     def get_settings(self):
         _mem = self._memobj
         basic = RadioSettingGroup("basic", "Basic Settings")
-        advanced = RadioSettingGroup("basic", "Advanced Settings")
+        advanced = RadioSettingGroup("advanced", "Advanced Settings")
         keya = RadioSettingGroup("keya", "Programmable Keys")
         dtmf = RadioSettingGroup("dtmf", "DTMF Settings")
         dtmfc = RadioSettingGroup("dtmfc", "DTMF Contacts")
         scanl = RadioSettingGroup("scn", "Scan Lists")
         unlock = RadioSettingGroup("unlock", "Unlock Settings")
         fmradio = RadioSettingGroup("fmradio", "FM Radio")
+        calibration = RadioSettingGroup("calibration", "Calibration")
 
         roinfo = RadioSettingGroup("roinfo", "Driver Information")
         top = RadioSettings()
@@ -1514,6 +1540,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_FMRADIO:
             top.append(fmradio)
         top.append(roinfo)
+        if self.just_downloaded:
+            top.append(calibration)  
 
         # helper function
         def appendLabel(radioSetting, label, descr = ""):
@@ -1981,6 +2009,130 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         appendLabel(roinfo, "Firmware Version", firmware)
         appendLabel(roinfo, "Driver version", DRIVER_VERSION)
+
+################## Calibration
+        
+
+        val = RadioSettingValueBoolean(False)
+        def validate_upload_calibration(value):
+            if value:
+                ret = wx.MessageBox("This option may brake your radio!!!\n"
+                            "You are doing this at your own risk.\n"
+                            "Don't use it unless you know what you're doing.", "Warning",
+                            wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING)
+                value = ret==wx.OK
+            self.upload_calibration = value
+            return value
+
+        val.set_validate_callback(validate_upload_calibration)
+        radioSetting = RadioSetting("upload_calibration", "Upload calibration", val)
+        calibration.append(radioSetting)
+
+        bands = {"sqlBand1_3": "Frequency Band 1-3", "sqlBand4_7": "Frequency Band 4-7"}
+        for band in bands:
+            appendLabel(calibration, "=" * 6 + " " + bands[band] + " " + "=" * 300, "=" * 300)
+            for sql in range(0, 10):
+                postfix = "_" + band + "sql" + str(sql + 1)
+                appendLabel(calibration, "Squelch " + str(sql + 1))
+
+                tempval = minMaxDef(_mem.cal[band].openRssiThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("openRssiThr" + postfix, "RSSI threshold open", val)
+                calibration.append(radioSetting)
+
+                tempval = minMaxDef(_mem.cal[band].closeRssiThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("closeRssiThr" + postfix, "RSSI threshold close", val)
+                calibration.append(radioSetting)
+
+                tempval = minMaxDef(_mem.cal[band].openNoiseThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("openNoiseThr" + postfix, "Noise threshold open", val)
+                calibration.append(radioSetting)
+
+                tempval = minMaxDef(_mem.cal[band].closeNoiseThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("closeNoiseThr" + postfix, "Noise threshold close", val)
+                calibration.append(radioSetting)
+
+                tempval = minMaxDef(_mem.cal[band].openGlitchThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("openGlitchThr" + postfix, "Glitch threshold open", val)
+                calibration.append(radioSetting)
+                
+                tempval = minMaxDef(_mem.cal[band].closeGlitchThr[sql], 0, 255, 0)
+                val = RadioSettingValueInteger(0, 255, tempval)
+                radioSetting = RadioSetting("closeGlitchThr" + postfix, "Glitch threshold close", val)
+                calibration.append(radioSetting)
+
+        bands = {"rssiLevelsBands1_2": "1-2 ", "rssiLevelsBands3_7": "3-7 "}
+        for band in bands:
+            appendLabel(calibration, "=" * 6 + " RSSI levels for QS original small bar graph, bands " + bands[band] + "=" * 300, "=" * 300)
+            for lvl in [1, 2, 4, 6]:
+                name = band + "_lvl" + str(lvl)
+                tempval = minMaxDef(_mem.cal[band]["level"+str(lvl)], 0, 65535, 0)
+                val = RadioSettingValueInteger(0, 65535, tempval)
+                radioSetting = RadioSetting(name, "Level " + str(lvl), val)
+                calibration.append(radioSetting)
+
+        for band in range(0,7):
+            appendLabel(calibration, "=" * 6 + " TX power band " + str(band+1) + " " + "=" * 300, "=" * 300)
+            powers = {"low": "Low", "mid": "Medium", "hi": "High"}
+            for pwr in powers:
+                appendLabel(calibration, powers[pwr])
+                bounds = ["lower", "center", "upper"]
+                for bound in bounds:
+                    name = "txp_band" + str(band) + "_" + pwr + "_" + bound
+                    tempval = minMaxDef(_mem.cal.txp[band][pwr][bound], 0, 255, 0)
+                    val = RadioSettingValueInteger(0, 255, tempval)
+                    radioSetting = RadioSetting(name, bound.capitalize(), val)
+                    calibration.append(radioSetting)
+
+        appendLabel(calibration, "=" * 6 + " Battery levels " + "=" * 300, "=" * 300)
+        for lvl in range(0,6):
+            name = "batLvl" + str(lvl)
+            tempVal = minMaxDef(_mem.cal.batLvl[lvl], 0, 4999, 4999)
+            val = RadioSettingValueInteger(0, 4999, tempVal)
+            radioSetting = RadioSetting(name, "Level " + str(lvl) + (" (voltage calibration)" if lvl==3 else ""), val)
+            calibration.append(radioSetting)
+
+        appendLabel(calibration, "=" * 6 + " VOX thresholds " + "=" * 300, "=" * 300)
+        for lvl in range(0,10):
+            appendLabel(calibration, "Level " + str(lvl + 1))
+
+            name = "vox1Thr" + str(lvl)
+            val = RadioSettingValueInteger(0, 65535, _mem.cal.vox1Thr[lvl])
+            radioSetting = RadioSetting(name, "On", val)
+            calibration.append(radioSetting)
+
+            name = "vox0Thr" + str(lvl)
+            val = RadioSettingValueInteger(0, 65535, _mem.cal.vox0Thr[lvl])
+            radioSetting = RadioSetting(name, "Off", val)
+            calibration.append(radioSetting)
+
+        appendLabel(calibration, "=" * 6 + " Microphone sensitivity " + "=" * 300, "=" * 300)
+        for lvl in range(0,5):
+            name = "micLevel" + str(lvl)
+            tempval = minMaxDef(_mem.cal.micLevel[lvl], 0, 31, 31)
+            val = RadioSettingValueInteger(0, 31, _mem.cal.micLevel[lvl])
+            radioSetting = RadioSetting(name, "Level " + str(lvl), val)
+            calibration.append(radioSetting)
+
+        appendLabel(calibration, "=" * 300, "=" * 300)
+        tempVal = minMaxDef(_mem.cal.xtalFreqLow, -1000, 1000, 0)
+        val = RadioSettingValueInteger(-1000, 1000, tempVal)
+        radioSetting = RadioSetting("cal.xtalFreqLow", "Xtal frequecy low", val)
+        calibration.append(radioSetting)
+
+        tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 63, 58)
+        val = RadioSettingValueInteger(0, 63, tempVal)
+        radioSetting = RadioSetting("cal.volumeGain", "Volume gain", val)
+        calibration.append(radioSetting)
+
+        tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 15, 8)
+        val = RadioSettingValueInteger(0, 15, tempVal)
+        radioSetting = RadioSetting("cal.dacGain", "DAC gain", val)
+        calibration.append(radioSetting)
 
 ################## LAYOUT
 
