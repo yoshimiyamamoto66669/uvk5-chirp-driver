@@ -440,6 +440,7 @@ VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 MEM_SIZE = 0x2000  # size of all memory
 PROG_SIZE = 0x1d00  # size of the memory that we will write
 MEM_BLOCK = 0x80  # largest block of memory that we can reliably write
+CAL_START = 0x1E00 # calibration memory start address
 
 # fm radio supported frequencies
 FMMIN = 76.0
@@ -685,8 +686,7 @@ def do_download(radio):
             addr += MEM_BLOCK
         else:
             raise errors.RadioError("Memory download incomplete")
-        
-    radio.just_downloaded = True
+
     return memmap.MemoryMapBytes(eeprom)
 
 
@@ -698,8 +698,8 @@ def do_upload(radio):
     status.msg = "Uploading to radio"
 
     if radio.upload_calibration:
-        status.max = MEM_SIZE-PROG_SIZE
-        startAddr = PROG_SIZE
+        status.max = MEM_SIZE-CAL_START
+        startAddr = CAL_START
         stopAddr = MEM_SIZE
     else:
         status.max = PROG_SIZE
@@ -765,7 +765,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     NEEDS_COMPAT_SERIAL = False
     FIRMWARE_VERSION = ""
 
-    just_downloaded = False
     upload_calibration = False
 
     def Get_VFO_CHANNEL_NAMES(self):
@@ -1160,10 +1159,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 self.set_settings(element)
                 continue
 
+            elname = element.get_name()
+
             # basic settings
                             
             # VFO_A e80 ScreenChannel_A
-            if element.get_name() == "VFO_A_chn":
+            if elname == "VFO_A_chn":
                 _mem.ScreenChannel_A = int(element.value)
                 if _mem.ScreenChannel_A < 200:
                     _mem.MrChannel_A = _mem.ScreenChannel_A
@@ -1173,7 +1174,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     _mem.NoaaChannel_A = _mem.ScreenChannel_A
 
             # VFO_B e83
-            if element.get_name() == "VFO_B_chn":
+            elif elname == "VFO_B_chn":
                 _mem.ScreenChannel_B = int(element.value)
                 if _mem.ScreenChannel_B < 200:
                     _mem.MrChannel_B = _mem.ScreenChannel_B
@@ -1183,192 +1184,192 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     _mem.NoaaChannel_B = _mem.ScreenChannel_B
                 
             # TX_VFO  channel selected A,B 
-            if element.get_name() == "TX_VFO":
+            elif elname == "TX_VFO":
                 _mem.TX_VFO = TX_VFO_LIST.index(str(element.value))
           
             # call channel
-            if element.get_name() == "call_channel":
+            elif elname == "call_channel":
                 _mem.call_channel = int(element.value)-1
 
             # squelch
-            if element.get_name() == "squelch":
+            elif elname == "squelch":
                 _mem.squelch = int(element.value)
             # TOT
-            if element.get_name() == "tot":
+            elif elname == "tot":
                 _mem.max_talk_time = int(element.value)
 
             # NOAA autoscan
-            if element.get_name() == "noaa_autoscan":
+            elif elname == "noaa_autoscan":
                 _mem.noaa_autoscan = element.value and 1 or 0
 
             # VOX
-            if element.get_name() == "vox":
+            elif elname == "vox":
                 voxvalue = VOX_LIST.index(str(element.value))
                 _mem.vox_switch = voxvalue > 0
                 _mem.vox_level = (voxvalue - 1) if _mem.vox_switch else 0
 
             # mic gain
-            if element.get_name() == "mic_gain":
+            elif elname == "mic_gain":
                 _mem.mic_gain = int(element.value)
 
             # Channel display mode
-            if element.get_name() == "channel_display_mode":
+            elif elname == "channel_display_mode":
                 _mem.channel_display_mode = CHANNELDISP_LIST.index(
                     str(element.value))
 
             # RX Mode
-            if element.get_name() == "rx_mode":
+            elif elname == "rx_mode":
                 tmptxmode = RXMODE_LIST.index(str(element.value))
                 tmpmainvfo = _mem.TX_VFO + 1
                 _mem.crossband = tmpmainvfo * bool(tmptxmode & 0b10)
                 _mem.dual_watch = tmpmainvfo * bool(tmptxmode & 0b01)  
 
             # Battery Save
-            if element.get_name() == "battery_save":
+            elif elname == "battery_save":
                 _mem.battery_save = BATSAVE_LIST.index(str(element.value))
 
 
             # RX_MODE
-            if element.get_name() == "RXMODE":
+            elif elname == "RXMODE":
                 tmprxmode = RXMODE_LIST.index(str(element.value))
 
             # Backlight auto mode
-            if element.get_name() == "backlight_time":
+            elif elname == "backlight_time":
                 _mem.backlight_time = BACKLIGHT_LIST.index(str(element.value))
 
             # Backlight min
-            if element.get_name() == "backlight.backlight_min":
+            elif elname == "backlight.backlight_min":
                 _mem.backlight.backlight_min = \
                         BACKLIGHT_LVL_LIST.index(str(element.value))
 
             # Backlight max
-            if element.get_name() == "backlight.backlight_max":
+            elif elname == "backlight.backlight_max":
                 _mem.backlight.backlight_max = \
                         BACKLIGHT_LVL_LIST.index(str(element.value))
 
             # Backlight TX_RX
-            if element.get_name() == "_0x0f47.Setting_backlight_on_TX_RX":
+            elif elname == "_0x0f47.Setting_backlight_on_TX_RX":
                 _mem._0x0f47.Setting_backlight_on_TX_RX = \
                         BACKLIGHT_TX_RX_LIST.index(str(element.value))  
                        
             # AM_fix
-            if element.get_name() == "_0x0f47.Setting_AM_fix":
+            elif elname == "_0x0f47.Setting_AM_fix":
                 _mem._0x0f47.Setting_AM_fix = element.value and 1 or 0
                                           
             # mic_bar
-            if element.get_name() == "mem._0x0f47.Setting_mic_bar":
+            elif elname == "mem._0x0f47.Setting_mic_bar":
                 _mem._0x0f47.Setting_mic_bar = element.value and 1 or 0
                     
              # Batterie txt
-            if element.get_name() == "_mem._0x0f47.Setting_battery_text":
+            elif elname == "_mem._0x0f47.Setting_battery_text":
                 _mem._0x0f47.Setting_battery_text = \
                         BAT_TXT_LIST.index(str(element.value))  
                             
             # Tail tone elimination
-            if element.get_name() == "ste":
+            elif elname == "ste":
                 _mem.ste = element.value and 1 or 0
 
             # VFO Open
-            if element.get_name() == "freq_mode_allowed":
+            elif elname == "freq_mode_allowed":
                 _mem.freq_mode_allowed = element.value and 1 or 0
 
              # Beep control
-            if element.get_name() == "button_beep":
+            elif elname == "button_beep":
                 _mem._0xe90.button_beep = element.value and 1 or 0 
 
             # Scan resume mode
-            if element.get_name() == "scan_resume_mode":
+            elif elname == "scan_resume_mode":
                 _mem.scan_resume_mode = SCANRESUME_LIST.index(
                     str(element.value))
 
             # Keypad lock
-            if element.get_name() == "key_lock":
+            elif elname == "key_lock":
                 _mem.key_lock = element.value and 1 or 0
 
             # Auto keypad lock
-            if element.get_name() == "auto_keypad_lock":
+            elif elname == "auto_keypad_lock":
                 _mem.auto_keypad_lock = element.value and 1 or 0
 
             # Power on display mode
-            if element.get_name() == "welcome_mode":
+            elif elname == "welcome_mode":
                 _mem.power_on_dispmode = WELCOME_LIST.index(str(element.value))
 
             # Keypad Tone
-            if element.get_name() == "voice":
+            elif elname == "voice":
                 _mem.voice = VOICE_LIST.index(str(element.value))
 
-            if element.get_name() == "s0_level":
+            elif elname == "s0_level":
                 _mem.s0_level = -int(element.value)
 
-            if element.get_name() == "s9_level":
+            elif elname == "s9_level":
                 _mem.s9_level = -int(element.value)
 
-            if element.get_name() == "password":
+            elif elname == "password":
                 if element.value.get_value() == None or element.value == "":
                     _mem.password = 0xFFFFFFFF
                 else:
                     _mem.password = int(element.value)
 
             # Alarm mode
-            if element.get_name() == "alarm_mode":
+            elif elname == "alarm_mode":
                 _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
 
             # Reminding of end of talk
-            if element.get_name() == "roger_beep":
+            elif elname == "roger_beep":
                 _mem.roger_beep = REMENDOFTALK_LIST.index(str(element.value))
 
             # Repeater tail tone elimination
-            if element.get_name() == "rp_ste":
+            elif elname == "rp_ste":
                 _mem.rp_ste = RTE_LIST.index(
                     str(element.value))
 
             # Logo string 1
-            if element.get_name() == "logo1":
+            elif elname == "logo1":
                 b = str(element.value).rstrip("\x20\xff\x00")+"\x00"*12
                 _mem.logo_line1 = b[0:12]+"\x00\xff\xff\xff"
 
             # Logo string 2
-            if element.get_name() == "logo2":
+            elif elname == "logo2":
                 b = str(element.value).rstrip("\x20\xff\x00")+"\x00"*12
                 _mem.logo_line2 = b[0:12]+"\x00\xff\xff\xff"
 
             # unlock settings
 
             # FLOCK
-            if element.get_name() == "int_flock":
+            elif elname == "int_flock":
                 _mem.int_flock = FLOCK_LIST.index(str(element.value))
 
             # 350TX
-            if element.get_name() == "int_350tx":
+            elif elname == "int_350tx":
                 _mem.int_350tx = element.value and 1 or 0
 
             # KILLED
-            if element.get_name() == "int_KILLED":
+            elif elname == "int_KILLED":
                 _mem.int_KILLED = element.value and 1 or 0
 
             # 200TX
-            if element.get_name() == "int_200tx":
+            elif elname == "int_200tx":
                 _mem.int_200tx = element.value and 1 or 0
 
             # 500TX
-            if element.get_name() == "int_500tx":
+            elif elname == "int_500tx":
                 _mem.int_500tx = element.value and 1 or 0
 
             # 350EN
-            if element.get_name() == "int_350en":
+            elif elname == "int_350en":
                 _mem.int_350en = element.value and 1 or 0
 
             # SCREN
-            if element.get_name() == "int_scren":
+            elif elname == "int_scren":
                 _mem.int_scren = element.value and 1 or 0
 
             # battery type
-            if element.get_name() == "Battery_type":
+            elif elname == "Battery_type":
                 _mem.Battery_type = BATTYPE_LIST.index(str(element.value))
             # fm radio
             for i in range(1, 21):
                 freqname = "FM_" + str(i)
-                if element.get_name() == freqname:
+                if elname == freqname:
                     val = str(element.value).strip()
                     try:
                         val2 = int(float(val)*10)
@@ -1383,100 +1384,100 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                     _mem.fmfreq[i-1] = val2
 
             # dtmf settings
-            if element.get_name() == "dtmf_side_tone":
+            if elname == "dtmf_side_tone":
                 _mem.dtmf.side_tone = \
                         element.value and 1 or 0
 
-            if element.get_name() == "dtmf_separate_code":
+            elif elname == "dtmf_separate_code":
                 _mem.dtmf.separate_code = str(element.value)
 
-            if element.get_name() == "dtmf_group_call_code":
+            elif elname == "dtmf_group_call_code":
                 _mem.dtmf.group_call_code = element.value
 
-            if element.get_name() == "dtmf_decode_response":
+            elif elname == "dtmf_decode_response":
                 _mem.dtmf.decode_response = \
                         DTMF_DECODE_RESPONSE_LIST.index(str(element.value))
 
-            if element.get_name() == "dtmf_auto_reset_time":
+            elif elname == "dtmf_auto_reset_time":
                 _mem.dtmf.auto_reset_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_preload_time":
+            elif elname == "dtmf_preload_time":
                 _mem.dtmf.preload_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_first_code_persist_time":
+            elif elname == "dtmf_first_code_persist_time":
                 _mem.dtmf.first_code_persist_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_hash_persist_time":
+            elif elname == "dtmf_hash_persist_time":
                 _mem.dtmf.hash_persist_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_code_persist_time":
+            elif elname == "dtmf_code_persist_time":
                 _mem.dtmf.code_persist_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_code_interval_time":
+            elif elname == "dtmf_code_interval_time":
                 _mem.dtmf.code_interval_time = \
                         int(int(element.value)/10)
 
-            if element.get_name() == "dtmf_permit_remote_kill":
+            elif elname == "dtmf_permit_remote_kill":
                 _mem.dtmf.permit_remote_kill = \
                         element.value and 1 or 0
 
-            if element.get_name() == "dtmf_dtmf_local_code":
+            elif elname == "dtmf_dtmf_local_code":
                 k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*3
                 _mem.dtmf.local_code = k[0:3]
 
-            if element.get_name() == "dtmf_dtmf_up_code":
+            elif elname == "dtmf_dtmf_up_code":
                 k = str(element.value).strip("\x20\xff\x00") + "\x00"*16
                 _mem.dtmf.up_code = k[0:16]
 
-            if element.get_name() == "dtmf_dtmf_down_code":
+            elif elname == "dtmf_dtmf_down_code":
                 k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*16
                 _mem.dtmf.down_code = k[0:16]
 
-            if element.get_name() == "dtmf_kill_code":
+            elif elname == "dtmf_kill_code":
                 k = str(element.value).strip("\x20\xff\x00") + "\x00"*5
                 _mem.dtmf.kill_code = k[0:5]
 
-            if element.get_name() == "dtmf_revive_code":
+            elif elname == "dtmf_revive_code":
                 k = str(element.value).strip("\x20\xff\x00") + "\x00"*5
                 _mem.dtmf.revive_code = k[0:5]
               
-            if element.get_name() == "_0x0f47.Setting_live_DTMF_decoder":
+            elif elname == "_0x0f47.Setting_live_DTMF_decoder":
                 _mem._0x0f47.Setting_live_DTMF_decoder = element.value and 1 or 0
             
             # dtmf contacts
             for i in range(1, 17):
                 varname = "DTMF_" + str(i)
-                if element.get_name() == varname:
+                if elname == varname:
                     k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*8
                     _mem.dtmfcontact[i-1].name = k[0:8]
 
                 varnumname = "DTMFNUM_" + str(i)
-                if element.get_name() == varnumname:
+                if elname == varnumname:
                     k = str(element.value).rstrip("\x20\xff\x00") + "\xff"*3
                     _mem.dtmfcontact[i-1].number = k[0:3]
  
             # scanlist stuff
-            if element.get_name() == "slDef":
+            if elname == "slDef":
                 _mem.slDef = SCANLIST_SELECT_LIST.index(
                         str(element.value))
 
-            if element.get_name() == "sl1PriorEnab":
+            elif elname == "sl1PriorEnab":
                 _mem.sl1PriorEnab = \
                         element.value and 1 or 0
 
-            if element.get_name() == "sl2PriorEnab":
+            elif elname == "sl2PriorEnab":
                 _mem.sl2PriorEnab = \
                         element.value and 1 or 0
 
-            if element.get_name() == "sl1PriorCh1" or \
-                    element.get_name() == "sl1PriorCh2" or \
-                    element.get_name() == "sl2PriorCh1" or \
-                    element.get_name() == "sl2PriorCh2":
+            elif elname == "sl1PriorCh1" or \
+                    elname == "sl1PriorCh2" or \
+                    elname == "sl2PriorCh1" or \
+                    elname == "sl2PriorCh2":
 
                 val = int(element.value)
 
@@ -1485,35 +1486,40 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 else:
                     val -= 1
 
-                if element.get_name() == "sl1PriorCh1":
+                if elname == "sl1PriorCh1":
                     _mem.sl1PriorCh1 = val
-                if element.get_name() == "sl1PriorCh2":
+                if elname == "sl1PriorCh2":
                     _mem.sl1PriorCh2 = val
-                if element.get_name() == "sl2PriorCh1":
+                if elname == "sl2PriorCh1":
                     _mem.sl2PriorCh1 = val
-                if element.get_name() == "sl2PriorCh2":
+                if elname == "sl2PriorCh2":
                     _mem.sl2PriorCh2 = val
 
-            if element.get_name() == "key1_shortpress_action":
+            if elname == "key1_shortpress_action":
                 _mem.key1_shortpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 
-            if element.get_name() == "key1_longpress_action":
+            elif elname == "key1_longpress_action":
                 _mem.key1_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 
-            if element.get_name() == "key2_shortpress_action":
+            elif elname == "key2_shortpress_action":
                 _mem.key2_shortpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 
-            if element.get_name() == "key2_longpress_action":
+            elif elname == "key2_longpress_action":
                 _mem.key2_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
-                      
-            if element.get_name() == "keyM_longpress_action":
+
+            elif elname == "keyM_longpress_action":
                 _mem._0xe90.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
-                
+
+
+            elif element.changed() and elname.startswith("_mem.cal."):
+                exec(elname + " = element.value.get_value()")
+                    
+
 
     def get_settings(self):
         _mem = self._memobj
@@ -1540,8 +1546,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_FMRADIO:
             top.append(fmradio)
         top.append(roinfo)
-        if self.just_downloaded:
-            top.append(calibration)
+        top.append(calibration)
 
         # helper function
         def appendLabel(radioSetting, label, descr = ""):
@@ -2015,9 +2020,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         val = RadioSettingValueBoolean(False)
         def validate_upload_calibration(value):
-            if value:
+            if value and not self.upload_calibration:
                 ret = wx.MessageBox("This option may brake your radio!!!\n"
                             "You are doing this at your own risk.\n"
+                            "Make sure you have a working calibration backup.\n"
                             "Don't use it unless you know what you're doing.", "Warning",
                             wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING)
                 value = ret==wx.OK
@@ -2029,7 +2035,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         calibration.append(radioSetting)
 
 
-
         radioSettingGroup = RadioSettingGroup("squelch_calibration", "Squelch")
         calibration.append(radioSettingGroup)
 
@@ -2037,38 +2042,44 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         for band in bands:
             appendLabel(radioSettingGroup, "=" * 6 + " " + bands[band] + " " + "=" * 300, "=" * 300)
             for sql in range(0, 10):
-                prefix = band + "."
+                prefix = "_mem.cal." + band + "."
                 postfix = "[" + str(sql) + "]"
                 appendLabel(radioSettingGroup, "Squelch " + str(sql + 1))
 
-                tempval = minMaxDef(_mem.cal[band].openRssiThr[sql], 0, 255, 0)
+                name = prefix + "openRssiThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "openRssiThr" + postfix, "RSSI threshold open", val)
+                radioSetting = RadioSetting(name, "RSSI threshold open", val)
                 radioSettingGroup.append(radioSetting)
 
-                tempval = minMaxDef(_mem.cal[band].closeRssiThr[sql], 0, 255, 0)
+                name = prefix + "closeRssiThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "closeRssiThr" + postfix, "RSSI threshold close", val)
+                radioSetting = RadioSetting(name, "RSSI threshold close", val)
                 radioSettingGroup.append(radioSetting)
 
-                tempval = minMaxDef(_mem.cal[band].openNoiseThr[sql], 0, 255, 0)
+                name = prefix + "openNoiseThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "openNoiseThr" + postfix, "Noise threshold open", val)
+                radioSetting = RadioSetting(name, "Noise threshold open", val)
                 radioSettingGroup.append(radioSetting)
 
-                tempval = minMaxDef(_mem.cal[band].closeNoiseThr[sql], 0, 255, 0)
+                name = prefix + "closeNoiseThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "closeNoiseThr" + postfix, "Noise threshold close", val)
+                radioSetting = RadioSetting(name, "Noise threshold close", val)
                 radioSettingGroup.append(radioSetting)
 
-                tempval = minMaxDef(_mem.cal[band].openGlitchThr[sql], 0, 255, 0)
+                name = prefix + "openGlitchThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "openGlitchThr" + postfix, "Glitch threshold open", val)
+                radioSetting = RadioSetting(name, "Glitch threshold open", val)
                 radioSettingGroup.append(radioSetting)
-                
-                tempval = minMaxDef(_mem.cal[band].closeGlitchThr[sql], 0, 255, 0)
+
+                name = prefix + "closeGlitchThr" + postfix
+                tempval = minMaxDef(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radioSetting = RadioSetting(prefix + "closeGlitchThr" + postfix, "Glitch threshold close", val)
+                radioSetting = RadioSetting(name, "Glitch threshold close", val)
                 radioSettingGroup.append(radioSetting)
 
 
@@ -2080,8 +2091,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         for band in bands:
             appendLabel(radioSettingGroup, "=" * 6 + " RSSI levels for QS original small bar graph, bands " + bands[band] + "=" * 300, "=" * 300)
             for lvl in [1, 2, 4, 6]:
-                name = band + ".level" + str(lvl)
-                tempval = minMaxDef(_mem.cal[band]["level"+str(lvl)], 0, 65535, 0)
+                name = "_mem.cal." + band + ".level" + str(lvl)
+                tempval = minMaxDef(eval(name), 0, 65535, 0)
                 val = RadioSettingValueInteger(0, 65535, tempval)
                 radioSetting = RadioSetting(name, "Level " + str(lvl), val)
                 radioSettingGroup.append(radioSetting)
@@ -2098,8 +2109,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 appendLabel(radioSettingGroup, powers[pwr])
                 bounds = ["lower", "center", "upper"]
                 for bound in bounds:
-                    name = "txp[" + str(band) + "]." + pwr + "." + bound
-                    tempval = minMaxDef(_mem.cal.txp[band][pwr][bound], 0, 255, 0)
+                    name = "_mem.cal.txp[" + str(band) + "]." + pwr + "." + bound
+                    tempval = minMaxDef(eval(name), 0, 255, 0)
                     val = RadioSettingValueInteger(0, 255, tempval)
                     radioSetting = RadioSetting(name, bound.capitalize(), val)
                     radioSettingGroup.append(radioSetting)
@@ -2110,8 +2121,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         calibration.append(radioSettingGroup)                    
 
         for lvl in range(0,6):
-            name = "batLvl[" + str(lvl) + "]"
-            tempVal = minMaxDef(_mem.cal.batLvl[lvl], 0, 4999, 4999)
+            name = "_mem.cal.batLvl[" + str(lvl) + "]"
+            tempVal = minMaxDef(eval(name), 0, 4999, 4999)
             val = RadioSettingValueInteger(0, 4999, tempVal)
             radioSetting = RadioSetting(name, "Level " + str(lvl) + (" (voltage calibration)" if lvl==3 else ""), val)
             radioSettingGroup.append(radioSetting)
@@ -2124,13 +2135,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         for lvl in range(0,10):
             appendLabel(radioSettingGroup, "Level " + str(lvl + 1))
 
-            name = "vox1Thr[" + str(lvl) + "]"
-            val = RadioSettingValueInteger(0, 65535, _mem.cal.vox1Thr[lvl])
+            name = "_mem.cal.vox1Thr[" + str(lvl) + "]"
+            val = RadioSettingValueInteger(0, 65535, eval(name))
             radioSetting = RadioSetting(name, "On", val)
             radioSettingGroup.append(radioSetting)
 
-            name = "vox0Thr[" + str(lvl) + "]"
-            val = RadioSettingValueInteger(0, 65535, _mem.cal.vox0Thr[lvl])
+            name = "_mem.cal.vox0Thr[" + str(lvl) + "]"
+            val = RadioSettingValueInteger(0, 65535, eval(name))
             radioSetting = RadioSetting(name, "Off", val)
             radioSettingGroup.append(radioSetting)
 
@@ -2140,9 +2151,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         calibration.append(radioSettingGroup)
 
         for lvl in range(0,5):
-            name = "micLevel[" + str(lvl) + "]"
-            tempval = minMaxDef(_mem.cal.micLevel[lvl], 0, 31, 31)
-            val = RadioSettingValueInteger(0, 31, _mem.cal.micLevel[lvl])
+            name = "_mem.cal.micLevel[" + str(lvl) + "]"
+            tempval = minMaxDef(eval(name), 0, 31, 31)
+            val = RadioSettingValueInteger(0, 31, tempval)
             radioSetting = RadioSetting(name, "Level " + str(lvl), val)
             radioSettingGroup.append(radioSetting)
 
@@ -2150,19 +2161,22 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         radioSettingGroup = RadioSettingGroup("other_calibration", "Other")
         calibration.append(radioSettingGroup)      
 
-        tempVal = minMaxDef(_mem.cal.xtalFreqLow, -1000, 1000, 0)
+        name = "_mem.cal.xtalFreqLow"
+        tempVal = minMaxDef(eval(name), -1000, 1000, 0)
         val = RadioSettingValueInteger(-1000, 1000, tempVal)
         radioSetting = RadioSetting("xtalFreqLow", "Xtal frequecy low", val)
         radioSettingGroup.append(radioSetting)
 
-        tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 63, 58)
+        name = "_mem.cal.volumeGain"
+        tempVal = minMaxDef(eval(name), 0, 63, 58)
         val = RadioSettingValueInteger(0, 63, tempVal)
-        radioSetting = RadioSetting("volumeGain", "Volume gain", val)
+        radioSetting = RadioSetting(name, "Volume gain", val)
         radioSettingGroup.append(radioSetting)
 
-        tempVal = minMaxDef(_mem.cal.xtalFreqLow, 0, 15, 8)
+        name = "_mem.cal.dacGain"
+        tempVal = minMaxDef(eval(name), 0, 15, 8)
         val = RadioSettingValueInteger(0, 15, tempVal)
-        radioSetting = RadioSetting("dacGain", "DAC gain", val)
+        radioSetting = RadioSetting(name, "DAC gain", val)
         radioSettingGroup.append(radioSetting)
 
 ################## LAYOUT
