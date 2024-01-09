@@ -239,7 +239,7 @@ struct {
         u8 closeGlitchThr[10];
         #seekto 0x1E50;
         u8 openGlitchThr[10];
-    } sqlBand1_3;
+    } sqlBand4_7;
 
     struct {
         #seekto 0x1E60;
@@ -254,7 +254,7 @@ struct {
         u8 closeGlitchThr[10];
         #seekto 0x1EB0;
         u8 openGlitchThr[10];
-    } sqlBand4_7;
+    } sqlBand1_3;
 
     #seekto 0x1EC0;
     struct {
@@ -2044,7 +2044,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             for sql in range(0, 10):
                 prefix = "_mem.cal." + band + "."
                 postfix = "[" + str(sql) + "]"
-                appendLabel(radioSettingGroup, "Squelch " + str(sql + 1))
+                appendLabel(radioSettingGroup, "Squelch " + str(sql))
 
                 name = prefix + "openRssiThr" + postfix
                 tempval = minMaxDef(eval(name), 0, 255, 0)
