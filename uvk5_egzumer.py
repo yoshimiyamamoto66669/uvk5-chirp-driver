@@ -492,6 +492,8 @@ KEYACTIONS_LIST = ["None",
                    "Switch demodulation"
                    ]
 
+MIC_GAIN_LIST = ["+1.1dB","+4.0dB","+8.0dB","+12.0dB","+15.1dB"]
+
 # the communication is obfuscated using this fine mechanism
 def xorarr(data: bytes):
     tbl = [22, 108, 20, 230, 46, 145, 13, 64, 33, 53, 213, 64, 19, 3, 233, 128]
@@ -1843,8 +1845,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem.noaa_autoscan)
         noaaAutoScanSetting = RadioSetting("noaa_autoscan", "NOAA Autoscan (NOAA-S)", val)
 
-        tmpmicgain = minMaxDef(_mem.mic_gain, 0, 4, 4)
-        val = RadioSettingValueInteger(0, 4, tmpmicgain)
+        tmpmicgain = listDef(_mem.mic_gain, MIC_GAIN_LIST, "+8.0dB")
+        val = RadioSettingValueList(MIC_GAIN_LIST, None, tmpmicgain)
         micGainSetting = RadioSetting("mic_gain", "Mic Gain (Mic)", val)
 
         val = RadioSettingValueBoolean(_mem._0x0f47.Setting_mic_bar)
@@ -1868,7 +1870,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueString(0, 12, logo2)
         logo2Setting = RadioSetting("logo2", "Message line 2 ( MAX 12 characters )", val)
 
-        tmpbattxt = listDef(_mem._0x0f47.Setting_battery_text, BAT_TXT_LIST, 0)
+        tmpbattxt = listDef(_mem._0x0f47.Setting_battery_text, BAT_TXT_LIST, 2)
         val = RadioSettingValueList(BAT_TXT_LIST, None, tmpbattxt)
         batTxtSetting = RadioSetting("_0x0f47.Setting_battery_text", "Battery Level Display (BatTXT)", val)
 
@@ -1880,7 +1882,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueList(BACKLIGHT_LVL_LIST, None, tmpback)
         blMinSetting = RadioSetting("backlight.backlight_min", "Backlight level min (BLMin)", val)
 
-        tmpback = listDef(_mem.backlight.backlight_max, BACKLIGHT_LVL_LIST, 0)
+        tmpback = listDef(_mem.backlight.backlight_max, BACKLIGHT_LVL_LIST, 10)
         val = RadioSettingValueList(BACKLIGHT_LVL_LIST, None, tmpback)
         blMaxSetting = RadioSetting("backlight.backlight_max", "Backlight level max (BLMax)", val)
 
@@ -1905,7 +1907,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem._0x0f47.Setting_AM_fix)
         amFixSetting = RadioSetting("_0x0f47.Setting_AM_fix", "AM reception fix (AM Fix)", val)
 
-        tmpvox = minMaxDef((_mem.vox_level + 1) * _mem.vox_switch, 0, 10, 10)
+        tmpvox = minMaxDef((_mem.vox_level + 1) * _mem.vox_switch, 0, 10, 0)
         val = RadioSettingValueList(VOX_LIST, None, tmpvox)
         voxSetting = RadioSetting("vox", "Voice-operated switch (VOX)", val)
 
@@ -1933,9 +1935,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         # S-meter
         tmpS0 = -int(_mem.s0_level)
         tmpS9 = -int(_mem.s9_level)
-        if tmpS0 > -90 or tmpS0 < -200 or tmpS9 > -50 or tmpS9 < -160:
-            tmpS0 = -200
-            tmpS9 = -160
+
+        if tmpS0 > -90 or tmpS0 < -200 or tmpS9 > -50 or tmpS9 < -160 or tmpS9 < tmpS0+9:
+            tmpS0 = -130
+            tmpS9 = -76
         val = RadioSettingValueInteger(-200, -90, tmpS0)
         s0LevelSetting = RadioSetting("s0_level", "S-meter S0 level [dBm]", val)
         
