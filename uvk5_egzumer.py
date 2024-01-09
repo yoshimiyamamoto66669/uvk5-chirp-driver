@@ -2059,14 +2059,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 radioSettingGroup.append(radioSetting)
 
                 name = prefix + "openNoiseThr" + postfix
-                tempval = minMaxDef(eval(name), 0, 255, 0)
-                val = RadioSettingValueInteger(0, 255, tempval)
+                tempval = minMaxDef(eval(name), 0, 127, 0)
+                val = RadioSettingValueInteger(0, 127, tempval)
                 radioSetting = RadioSetting(name, "Noise threshold open", val)
                 radioSettingGroup.append(radioSetting)
 
                 name = prefix + "closeNoiseThr" + postfix
-                tempval = minMaxDef(eval(name), 0, 255, 0)
-                val = RadioSettingValueInteger(0, 255, tempval)
+                tempval = minMaxDef(eval(name), 0, 127, 0)
+                val = RadioSettingValueInteger(0, 127, tempval)
                 radioSetting = RadioSetting(name, "Noise threshold close", val)
                 radioSettingGroup.append(radioSetting)
 
