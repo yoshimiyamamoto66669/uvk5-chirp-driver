@@ -1696,8 +1696,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
 
         # D Prel
-        tmpval = minMaxDef(_mem.dtmf.preload_time * 10, 30, 1000, 300)
-        val = RadioSettingValueInteger(30, 1000, tmpval, 10)
+        tmpval = minMaxDef(_mem.dtmf.preload_time * 10, 30, 990, 300)
+        val = RadioSettingValueInteger(30, 990, tmpval, 10)
         dPrelSetting = RadioSetting("dtmf_preload_time", "Pre-load time (ms) (D Prel)", val)
         
         # D LIVE
