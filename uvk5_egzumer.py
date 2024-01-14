@@ -480,19 +480,19 @@ DTMF_CHARS_UPDOWN = "0123456789ABCDabcd#* "
 DTMF_CODE_CHARS = "ABCD*# "
 DTMF_DECODE_RESPONSE_LIST = ["DO NOTHING", "RING", "REPLY", "BOTH"]
 
-KEYACTIONS_LIST = ["None",
-                   "Flashlight",
-                   "Power",
-                   "Monitor",
-                   "Scan",
+KEYACTIONS_LIST = ["NONE",
+                   "FLASHLIGHT",
+                   "POWER",
+                   "MONITOR",
+                   "SCAN",
                    "VOX",
-                   "Alarm",
-                   "FM radio",
-                   "1750Hz tone",
-                   "Lock keypad",
-                   "Switch main VFO",
-                   "Switch frequency/memory mode",
-                   "Switch demodulation"
+                   "ALARM",
+                   "FM RADIO",
+                   "1750Hz TONE",
+                   "LOCK KEYPAD",
+                   "Switch main VFO (SWITCH VFO)",
+                   "Switch frequency/memory mode (VFO/MR)",
+                   "Switch demodulation (SWITCH DEMODUL)"
                    ]
 
 MIC_GAIN_LIST = ["+1.1dB","+4.0dB","+8.0dB","+12.0dB","+15.1dB"]
@@ -1572,11 +1572,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             hasFlashlight = self._memobj.BUILD_OPTIONS.ENABLE_FLASHLIGHT
             lst = KEYACTIONS_LIST.copy()
             if not hasAlarm:
-                lst.remove("Alarm")
+                lst.remove("ALARM")
             if not has1750:
-                lst.remove("1750Hz tone")
+                lst.remove("1750Hz TONE")
             if not hasFlashlight:
-                lst.remove("Flashlight")
+                lst.remove("FLASHLIGHT")
               
             actionNum = int(actionNum)
             if actionNum >= len(KEYACTIONS_LIST) or KEYACTIONS_LIST[actionNum] not in lst:
