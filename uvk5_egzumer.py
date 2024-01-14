@@ -437,7 +437,7 @@ TX_VFO_LIST = ["A", "B"]
 ALARMMODE_LIST = ["SITE", "TONE"]
 REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
 RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
-            "500ms", "600ms", "700ms", "800ms", "900ms"]
+            "500ms", "600ms", "700ms", "800ms", "900ms", "1000ms"]
 VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 MEM_SIZE = 0x2000  # size of all memory
