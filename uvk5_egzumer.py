@@ -360,6 +360,9 @@ RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"]
 # channel display mode
 CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
+# TalkTime
+TALK_TIME_LIST = ["30 sec", "1 min", "2 min", "3 min", "4 min", "5 min", "6 min", "7 min", "8 min", "9 min", "15 min"]
+
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
 
@@ -1196,9 +1199,10 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             # squelch
             elif elname == "squelch":
                 _mem.squelch = int(element.value)
+              
             # TOT
             elif elname == "tot":
-                _mem.max_talk_time = int(element.value)
+                _mem.max_talk_time = TALK_TIME_LIST.index(str(element.value))
 
             # NOAA autoscan
             elif elname == "noaa_autoscan":
@@ -1834,9 +1838,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem.auto_keypad_lock)
         autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock (KeyLck)", val)
 
-        tmptot = minMaxDef(_mem.max_talk_time, 0, 10, 10)
-        val = RadioSettingValueInteger(0, 10, tmptot)
-        txTOutSetting = RadioSetting("tot", "Max talk time [min] (TxTOut)", val)
+        tmptot = listDef(_mem.max_talk_time,  TALK_TIME_LIST, "1 min")
+        val = RadioSettingValueList(TALK_TIME_LIST, None, tmptot)
+        txTOutSetting = RadioSetting("tot", "Max talk, TX Time Out (TxTOut)", val)
 
         tmpbatsave = listDef(_mem.battery_save, BATSAVE_LIST, "1:4")
         val = RadioSettingValueList(BATSAVE_LIST, None, tmpbatsave)
