@@ -610,6 +610,8 @@ def _sayhello(serport):
         if tries == 0:
             LOG.warning("Failed to initialise radio")
             raise errors.RadioError("Failed to initialize radio")
+    if o.startswith(b'\x18\x05'):
+        raise errors.RadioError("Radio is in programming mode, restart radio into normal mode")
     firmware = _getstring(o, 4, 24)
 
     LOG.info("Found firmware: %s" % firmware)
@@ -678,7 +680,7 @@ def do_download(radio):
     if f:
         radio.FIRMWARE_VERSION = f
     else:
-        return False
+        raise errors.RadioError("Failed to initialize radio")
 
     addr = 0
     while addr < MEM_SIZE:
