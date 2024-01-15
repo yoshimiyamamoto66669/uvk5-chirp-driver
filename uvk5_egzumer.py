@@ -48,7 +48,7 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp
-DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver v20240115 (c) egzumer"
+DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver ver:2024/01/15 (c) egzumer"
 DRIVER_VERSION_UPDATE = "https://github.com/egzumer/uvk5-chirp-driver"
 VALEUR_COMPILER = "ENABLE"
 
@@ -363,6 +363,9 @@ CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
 # TalkTime
 TALK_TIME_LIST = ["30 sec", "1 min", "2 min", "3 min", "4 min", "5 min", "6 min", "7 min", "8 min", "9 min", "15 min"]
+
+# Auto Keypad Lock
+AUTO_KEYPAD_LOCK_LIST = ["OFF", "AUTO"]
 
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
@@ -1297,7 +1300,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Auto keypad lock
             elif elname == "auto_keypad_lock":
-                _mem.auto_keypad_lock = element.value and 1 or 0
+                _mem.auto_keypad_lock = AUTO_KEYPAD_LOCK_LIST.index(str(element.value))
 
             # Power on display mode
             elif elname == "welcome_mode":
@@ -1838,8 +1841,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem.key_lock)
         keypadLockSetting = RadioSetting("key_lock", "Keypad locked", val)
 
-        val = RadioSettingValueBoolean(_mem.auto_keypad_lock)
-        autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock (KeyLck)", val)
+        tmpautokpd = listDef(_mem.auto_keypad_lock, AUTO_KEYPAD_LOCK_LIST, "OFF")
+        val = RadioSettingValueList(AUTO_KEYPAD_LOCK_LIST, None, tmpautokpd)
+        autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock after inactivity ~15sec (KeyLck)", val)
 
         tmptot = listDef(_mem.max_talk_time,  TALK_TIME_LIST, "1 min")
         val = RadioSettingValueList(TALK_TIME_LIST, None, tmptot)
