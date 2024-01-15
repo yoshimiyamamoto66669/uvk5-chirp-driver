@@ -1127,7 +1127,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # Frequency reverse
         val = RadioSettingValueBoolean(_mem.freq_reverse)
-        rs = RadioSetting("frev", "Reverse Frequencies", val)
+        rs = RadioSetting("frev", "Reverse Frequencies (R)", val)
         mem.extra.append(rs)
 
         # PTTID
