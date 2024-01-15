@@ -48,7 +48,8 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp
-DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver v20231218 (c) egzumer"
+DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver v20240115 (c) egzumer"
+DRIVER_VERSION_UPDATE = "https://github.com/egzumer/uvk5-chirp-driver"
 VALEUR_COMPILER = "ENABLE"
 
 MEM_FORMAT = """
@@ -2023,7 +2024,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         appendLabel(roinfo, "Firmware Version", firmware)
         appendLabel(roinfo, "Driver version", DRIVER_VERSION)
-
+        val = RadioSettingValueString(0,50,DRIVER_VERSION_UPDATE)
+        rs = RadioSetting("Update","For lastest driver" + self.MODEL +" copy:(CTRL-C) the link, paste:(CTRL-V) the link to your browser :", val)                      
+        roinfo.append(rs)
 ################## Calibration
         
 
