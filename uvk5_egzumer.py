@@ -1,4 +1,4 @@
-# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
+# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowsklastesi.org>
 # Adapted For UV-K5 EGZUMER custom software By EGZUMER, JOC2 
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
@@ -2025,7 +2025,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         appendLabel(roinfo, "Firmware Version", firmware)
         appendLabel(roinfo, "Driver version", DRIVER_VERSION)
         val = RadioSettingValueString(0,50,DRIVER_VERSION_UPDATE)
-        rs = RadioSetting("Update","For lastest driver" + self.MODEL +" copy:(CTRL-C) the link, paste:(CTRL-V) the link to your browser :", val)                      
+        rs = RadioSetting("Update","For lastest driver " + self.MODEL +" copy:(CTRL-C) the link, paste:(CTRL-V) the link to your browser :", val)                      
         roinfo.append(rs)
 ################## Calibration
         
