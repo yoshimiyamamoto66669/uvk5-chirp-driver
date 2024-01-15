@@ -1971,7 +1971,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
 ################## FM radio
 
-        appendLabel(fmradio, "Channel", "Frequency [MHz]")
+        appendLabel(fmradio, "Channel Memory Radio (MR)", "Frequency [MHz]")
 
         for i in range(1, 21):
             fmfreq = _mem.fmfreq[i-1]/10.0
