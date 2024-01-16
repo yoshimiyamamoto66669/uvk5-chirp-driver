@@ -1,4 +1,4 @@
-# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowsklastesi.org>
+# Quansheng UV-K5 driver (c) 2023 Jacek Lipkowski <sq5bpf@lipkowski.org>
 # Adapted For UV-K5 EGZUMER custom software By EGZUMER, JOC2 
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
@@ -48,8 +48,7 @@ DEBUG_SHOW_OBFUSCATED_COMMANDS = False
 DEBUG_SHOW_MEMORY_ACTIONS = False
 
 # TODO: remove the driver version when it's in mainline chirp
-DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver ver:2024/01/15 (c) egzumer"
-DRIVER_VERSION_UPDATE = "https://github.com/egzumer/uvk5-chirp-driver"
+DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver (c) egzumer"
 VALEUR_COMPILER = "ENABLE"
 
 MEM_FORMAT = """
@@ -363,9 +362,6 @@ CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
 # TalkTime
 TALK_TIME_LIST = ["30 sec", "1 min", "2 min", "3 min", "4 min", "5 min", "6 min", "7 min", "8 min", "9 min", "15 min"]
-
-# Auto Keypad Lock
-AUTO_KEYPAD_LOCK_LIST = ["OFF", "AUTO"]
 
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
@@ -1300,7 +1296,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Auto keypad lock
             elif elname == "auto_keypad_lock":
-                _mem.auto_keypad_lock = AUTO_KEYPAD_LOCK_LIST.index(str(element.value))
+                _mem.auto_keypad_lock = element.value and 1 or 0
 
             # Power on display mode
             elif elname == "welcome_mode":
@@ -1841,9 +1837,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem.key_lock)
         keypadLockSetting = RadioSetting("key_lock", "Keypad locked", val)
 
-        tmpautokpd = listDef(_mem.auto_keypad_lock, AUTO_KEYPAD_LOCK_LIST, "OFF")
-        val = RadioSettingValueList(AUTO_KEYPAD_LOCK_LIST, None, tmpautokpd)
-        autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock after inactivity ~15sec (KeyLck)", val)
+        val = RadioSettingValueBoolean(_mem.auto_keypad_lock)
+        autoKeypadLockSetting = RadioSetting("auto_keypad_lock", "Auto keypad lock (KeyLck)", val)
 
         tmptot = listDef(_mem.max_talk_time,  TALK_TIME_LIST, "1 min")
         val = RadioSettingValueList(TALK_TIME_LIST, None, tmptot)
@@ -1976,7 +1971,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
 ################## FM radio
 
-        appendLabel(fmradio, "Channel Memory Radio (MR)", "Frequency [MHz]")
+        appendLabel(fmradio, "Channel", "Frequency [MHz]")
 
         for i in range(1, 21):
             fmfreq = _mem.fmfreq[i-1]/10.0
@@ -2028,9 +2023,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         appendLabel(roinfo, "Firmware Version", firmware)
         appendLabel(roinfo, "Driver version", DRIVER_VERSION)
-        val = RadioSettingValueString(0,50,DRIVER_VERSION_UPDATE)
-        rs = RadioSetting("Update","For lastest driver " + self.MODEL +" copy:(CTRL-C) the link, paste:(CTRL-V) the link to your browser :", val)                      
-        roinfo.append(rs)
+
 ################## Calibration
         
 
