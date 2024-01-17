@@ -2173,7 +2173,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         name = "_mem.cal.xtalFreqLow"
         tempVal = minMaxDef(eval(name), -1000, 1000, 0)
         val = RadioSettingValueInteger(-1000, 1000, tempVal)
-        radioSetting = RadioSetting("xtalFreqLow", "Xtal frequecy low", val)
+        radioSetting = RadioSetting(name, "Xtal frequecy low", val)
         radioSettingGroup.append(radioSetting)
 
         name = "_mem.cal.volumeGain"
