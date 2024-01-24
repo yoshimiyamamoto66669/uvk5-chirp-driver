@@ -212,7 +212,7 @@ u8  backlight_on_TX_RX:2,
     live_DTMF_decoder:1,
     unknown:1;
 
-  
+
 #seekto 0xf50;
 struct {
 char name[16];
@@ -352,7 +352,7 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
 
 # scrambler
 SCRAMBLER_LIST = ["OFF", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
-                   "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
+                  "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
 # compander
 COMPANDER_LIST = ["OFF", "TX", "RX", "TX/RX"]
 # rx mode
@@ -362,7 +362,7 @@ CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
 # TalkTime
 TALK_TIME_LIST = ["30 sec", "1 min", "2 min", "3 min", "4 min", "5 min",
-                   "6 min", "7 min", "8 min", "9 min", "15 min"]
+                  "6 min", "7 min", "8 min", "9 min", "15 min"]
 
 # battery save
 BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
@@ -404,7 +404,7 @@ CTCSS_TONES = [
 ]
 
 # lifted from ft4.py
-DTCS_CODES = [ # TODO: add negative codes
+DTCS_CODES = [  # TODO: add negative codes
     23,  25,  26,  31,  32,  36,  43,  47,  51,  53,  54,
     65,  71,  72,  73,  74,  114, 115, 116, 122, 125, 131,
     132, 134, 143, 145, 152, 155, 156, 162, 165, 172, 174,
@@ -419,11 +419,11 @@ DTCS_CODES = [ # TODO: add negative codes
 
 # flock list extended
 FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
-              "FCC HAM (144-148, 420-450)", 
-              "CE HAM (144-146, 430-440)", 
-              "GB HAM (144-148, 430-440)", 
-              "137-174, 400-430", 
-              "137-174, 400-438", 
+              "FCC HAM (144-148, 420-450)",
+              "CE HAM (144-146, 430-440)",
+              "GB HAM (144-148, 430-440)",
+              "137-174, 400-430",
+              "137-174, 400-438",
               "Disable All",
               "Unlock All"]
 
@@ -444,7 +444,7 @@ VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 MEM_SIZE = 0x2000  # size of all memory
 PROG_SIZE = 0x1d00  # size of the memory that we will write
 MEM_BLOCK = 0x80  # largest block of memory that we can reliably write
-CAL_START = 0x1E00 # calibration memory start address
+CAL_START = 0x1E00  # calibration memory start address
 
 # fm radio supported frequencies
 FMMIN = 76.0
@@ -452,7 +452,7 @@ FMMAX = 108.0
 
 # bands supported by the UV-K5
 BANDS_STANDARD = {
-        0: [ 50.0, 76.0],
+        0: [50.0, 76.0],
         1: [108.0, 136.9999],
         2: [137.0, 173.9999],
         3: [174.0, 349.9999],
@@ -462,7 +462,7 @@ BANDS_STANDARD = {
         }
 
 BANDS_WIDE = {
-        0: [ 18.0, 108.0],
+        0: [18.0, 108.0],
         1: [108.0, 136.9999],
         2: [137.0, 173.9999],
         3: [174.0, 349.9999],
@@ -496,7 +496,8 @@ KEYACTIONS_LIST = ["NONE",
                    "Switch demodulation (SWITCH DEMODUL)"
                    ]
 
-MIC_GAIN_LIST = ["+1.1dB","+4.0dB","+8.0dB","+12.0dB","+15.1dB"]
+MIC_GAIN_LIST = ["+1.1dB", "+4.0dB", "+8.0dB", "+12.0dB", "+15.1dB"]
+
 
 def xorarr(data: bytes):
     """the communication is obfuscated using this fine mechanism"""
@@ -572,7 +573,7 @@ def _receive_reply(serport):
 
     if footer[2] != 0xDC or footer[3] != 0xBA:
         LOG.debug("Reply before bad response footer (obfuscated)"
-                "len=0x%4.4x:\n%s", len(cmd), util.hexprint(cmd))
+                  "len=0x%4.4x:\n%s", len(cmd), util.hexprint(cmd))
         LOG.warning("Bad response footer: %s len=%i",
                     util.hexprint(footer), len(footer))
         raise errors.RadioError("Bad response footer")
@@ -652,11 +653,12 @@ def _writemem(serport, data, offset):
     _send_command(serport, writemem)
     rep = _receive_reply(serport)
 
-    LOG.debug("writemem Received data: %s len=%i", util.hexprint(rep), len(rep))
+    LOG.debug("writemem Received data: %s len=%i",
+              util.hexprint(rep), len(rep))
 
     if (rep[0] == 0x1e and
-        rep[4] == (offset & 0xff) and
-        rep[5] == (offset >> 8) & 0xff):
+       rep[4] == (offset & 0xff) and
+       rep[5] == (offset >> 8) & 0xff):
         return True
 
     LOG.warning("Bad data from writemem")
@@ -750,6 +752,7 @@ def min_max_def(value, min_val, max_val, default):
         return default
     return value
 
+
 def list_def(value, lst, default):
     """return value if is in the list, default otherwise"""
     if isinstance(default, str):
@@ -757,6 +760,7 @@ def list_def(value, lst, default):
     if value < 0 or value >= len(lst):
         return default
     return value
+
 
 @directory.register
 class UVK5Radio(chirp_common.CloneModeRadio):
@@ -769,10 +773,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
     upload_calibration = False
 
+    def _get_bands(self):
+        is_wide = self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX \
+            if self._memobj is not None else True
+        bands = BANDS_WIDE if is_wide else BANDS_STANDARD
+        return bands
+
     def _find_band(self, hz):
         mhz = hz/1000000.0
-        bands = BANDS_WIDE if self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX \
-                else BANDS_STANDARD
+        bands = self._get_bands()
         for bnd, rng in bands.items():
             if rng[0] <= mhz <= rng[1]:
                 return bnd
@@ -780,8 +789,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
     def _get_vfo_channel_names(self):
         """generates VFO_CHANNEL_NAMES"""
-        is_wide = self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX
-        bands = BANDS_STANDARD if not is_wide else BANDS_WIDE
+        bands = self._get_bands()
         names = []
         for bnd, rng in bands.items():
             name = f"F{bnd + 1}({round(rng[0])}M-{round(rng[1])}M)"
@@ -801,12 +809,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         rp = chirp_common.RadioPrompts()
         rp.experimental = \
             _('This is an experimental driver for the Quansheng UV-K5. '
-             'It may harm your radio, or worse. Use at your own risk.\n\n'
-             'Before attempting to do any changes please download'
-             'the memory image from the radio with chirp '
-             'and keep it. This can be later used to recover the '
-             'original settings. \n\n'
-             'some details are not yet implemented')
+              'It may harm your radio, or worse. Use at your own risk.\n\n'
+              'Before attempting to do any changes please download'
+              'the memory image from the radio with chirp '
+              'and keep it. This can be later used to recover the '
+              'original settings. \n\n'
+              'some details are not yet implemented')
         rp.pre_download = _(
             "1. Turn radio on.\n"
             "2. Connect cable to mic/spkr connector.\n"
@@ -860,8 +868,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         #                  (840000000, 1300000000)
         #                  ]
         rf.valid_bands = []
-        bands = BANDS_WIDE if self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX \
-                else BANDS_STANDARD
+        bands = self._get_bands()
         for _, rng in bands.items():
             rf.valid_bands.append(
                     (int(rng[0]*1000000), int(rng[1]*1000000)))
@@ -1097,7 +1104,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         temp_modul = _mem.modulation*2 + _mem.bandwidth
         if temp_modul < len(temp_modes):
             mem.mode = temp_modes[temp_modul]
-        elif temp_modul == 5: # USB with narrow setting
+        elif temp_modul == 5:  # USB with narrow setting
             mem.mode = temp_modes[4]
         elif temp_modul >= len(temp_modes):
             mem.mode = "UNSUPPORTED BY CHIRP"
@@ -1267,7 +1274,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             elif elname == "mem.mic_bar":
                 _mem.mic_bar = int(element.value)
 
-             # Batterie txt
+            # Batterie txt
             elif elname == "_mem.battery_text":
                 _mem.battery_text = \
                         BAT_TXT_LIST.index(str(element.value))
@@ -1280,7 +1287,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             elif elname == "freq_mode_allowed":
                 _mem.freq_mode_allowed = int(element.value)
 
-             # Beep control
+            # Beep control
             elif elname == "button_beep":
                 _mem.button_beep = int(element.value)
 
@@ -1522,10 +1529,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.keyM_longpress_action = KEYACTIONS_LIST.index(
                         str(element.value))
 
-
             elif element.changed() and elname.startswith("_mem.cal."):
                 exec(elname + " = element.value.get_value()")
-
 
     def get_settings(self):
         _mem = self._memobj
@@ -1555,7 +1560,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         top.append(calibration)
 
         # helper function
-        def append_label(radio_setting, label, descr = ""):
+        def append_label(radio_setting, label, descr=""):
             if not hasattr(append_label, 'idx'):
                 append_label.idx = 0
 
@@ -1581,7 +1586,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             action_num = int(action_num)
             if action_num >= len(KEYACTIONS_LIST) or \
-                KEYACTIONS_LIST[action_num] not in lst:
+               KEYACTIONS_LIST[action_num] not in lst:
                 action_num = 0
             return lst, KEYACTIONS_LIST[action_num]
 
@@ -1610,8 +1615,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           "Menu key long press (M Long)", val)
         keya.append(rs)
 
-
-################## DTMF settings
+        # ----------------- DTMF settings
 
         tmpval = str(_mem.dtmf.separate_code)
         if tmpval not in DTMF_CODE_CHARS:
@@ -1632,13 +1636,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpval = min_max_def(_mem.dtmf.first_code_persist_time * 10,
                              30, 1000, 300)
         val = RadioSettingValueInteger(30, 1000, tmpval, 10)
-        first_code_per_setting = RadioSetting("dtmf_first_code_persist_time",
-                          "First code persist time (ms)", val)
+        first_code_per_setting = \
+            RadioSetting("dtmf_first_code_persist_time",
+                         "First code persist time (ms)", val)
 
         tmpval = min_max_def(_mem.dtmf.hash_persist_time * 10, 30, 1000, 300)
         val = RadioSettingValueInteger(30, 1000, tmpval, 10)
         spec_per_setting = RadioSetting("dtmf_hash_persist_time",
-                                      "#/* persist time (ms)", val)
+                                        "#/* persist time (ms)", val)
 
         tmpval = min_max_def(_mem.dtmf.code_persist_time * 10, 30, 1000, 300)
         val = RadioSettingValueInteger(30, 1000, tmpval, 10)
@@ -1659,8 +1664,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             break
         val = RadioSettingValueString(3, 3, tmpval)
         val.set_charset(DTMF_CHARS_ID)
-        ani_id_setting = RadioSetting("dtmf_dtmf_local_code",
-                          "Local code (3 chars 0-9 ABCD) (ANI ID)", val)
+        ani_id_setting = \
+            RadioSetting("dtmf_dtmf_local_code",
+                         "Local code (3 chars 0-9 ABCD) (ANI ID)", val)
 
         tmpval = str(_mem.dtmf.up_code).upper().strip(
                 "\x00\xff\x20")
@@ -1672,8 +1678,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 break
         val = RadioSettingValueString(1, 16, tmpval)
         val.set_charset(DTMF_CHARS_UPDOWN)
-        up_code_setting = RadioSetting("dtmf_dtmf_up_code",
-                          "Up code (1-16 chars 0-9 ABCD*#) (UPCode)", val)
+        up_code_setting = \
+            RadioSetting("dtmf_dtmf_up_code",
+                         "Up code (1-16 chars 0-9 ABCD*#) (UPCode)", val)
 
         tmpval = str(_mem.dtmf.down_code).upper().strip(
                 "\x00\xff\x20")
@@ -1685,24 +1692,25 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 break
         val = RadioSettingValueString(1, 16, tmpval)
         val.set_charset(DTMF_CHARS_UPDOWN)
-        dw_code_setting = RadioSetting("dtmf_dtmf_down_code",
-                          "Down code (1-16 chars 0-9 ABCD*#) (DWCode)", val)
+        dw_code_setting = \
+            RadioSetting("dtmf_dtmf_down_code",
+                         "Down code (1-16 chars 0-9 ABCD*#) (DWCode)", val)
 
         val = RadioSettingValueBoolean(_mem.dtmf.side_tone)
-        dtmf_side_tone_setting = RadioSetting("dtmf_side_tone",
-                "DTMF Sidetone on speaker when sent (D ST)", val)
+        dtmf_side_tone_setting = \
+            RadioSetting("dtmf_side_tone",
+                         "DTMF Sidetone on speaker when sent (D ST)", val)
 
         tmpval = list_def(_mem.dtmf.decode_response,
                           DTMF_DECODE_RESPONSE_LIST, 0)
-        val = RadioSettingValueList(DTMF_DECODE_RESPONSE_LIST, None,tmpval)
+        val = RadioSettingValueList(DTMF_DECODE_RESPONSE_LIST, None, tmpval)
         dtmf_resp_setting = RadioSetting("dtmf_decode_response",
-                                       "Decode Response (D Resp)", val)
+                                         "Decode Response (D Resp)", val)
 
         tmpval = min_max_def(_mem.dtmf.auto_reset_time, 5, 60, 5)
         val = RadioSettingValueInteger(5, 60, tmpval)
         d_hold_setting = RadioSetting("dtmf_auto_reset_time",
                                       "Auto reset time (s) (D Hold)", val)
-
 
         # D Prel
         tmpval = min_max_def(_mem.dtmf.preload_time * 10, 30, 990, 300)
@@ -1712,8 +1720,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
         # D LIVE
         val = RadioSettingValueBoolean(_mem.live_DTMF_decoder)
-        d_live_setting = RadioSetting("live_DTMF_decoder", "Displays DTMF codes"
-                        " received in the middle of the screen (D Live)", val)
+        d_live_setting = \
+            RadioSetting("live_DTMF_decoder", "Displays DTMF codes"
+                         " received in the middle of the screen (D Live)", val)
 
         val = RadioSettingValueBoolean(_mem.dtmf.permit_remote_kill)
         perm_kill_setting = RadioSetting("dtmf_permit_remote_kill",
@@ -1752,12 +1761,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueBoolean(_mem.int_KILLED)
         killed_setting = RadioSetting("int_KILLED", "DTMF kill lock", val)
 
-################## DTMF Contacts
+        # ----------------- DTMF Contacts
 
         append_label(dtmfc, "DTMF Contacts  (D List)",
-                    "All DTMF Contacts are 3 codes "
-                    "(valid: 0-9 * # ABCD), "
-                    "or an empty string")
+                     "All DTMF Contacts are 3 codes "
+                     "(valid: 0-9 * # ABCD), "
+                     "or an empty string")
 
         for i in range(1, 17):
             varname = "DTMF_"+str(i)
@@ -1777,7 +1786,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             rs = RadioSetting(varnumname, varinumdescr, val)
             dtmfc.append(rs)
 
-################## Scan Lists
+        # ----------------- Scan Lists
 
         tmpscanl = list_def(_mem.slDef, SCANLIST_SELECT_LIST, 0)
         val = RadioSettingValueList(SCANLIST_SELECT_LIST, None, tmpscanl)
@@ -1818,7 +1827,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                           "Scanlist 2 priority channel 2 (0 - OFF)", val)
         scanl.append(rs)
 
-################## Basic settings
+        # ----------------- Basic settings
 
         ch_list = []
         for ch in range(1, 201):
@@ -1856,8 +1865,9 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         keypad_cock_setting = RadioSetting("key_lock", "Keypad locked", val)
 
         val = RadioSettingValueBoolean(_mem.auto_keypad_lock)
-        auto_keypad_lock_setting = RadioSetting("auto_keypad_lock",
-                                            "Auto keypad lock (KeyLck)", val)
+        auto_keypad_lock_setting = \
+            RadioSetting("auto_keypad_lock",
+                         "Auto keypad lock (KeyLck)", val)
 
         tmptot = list_def(_mem.max_talk_time,  TALK_TIME_LIST, "1 min")
         val = RadioSettingValueList(TALK_TIME_LIST, None, tmptot)
@@ -1942,12 +1952,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                                      "End of transmission beep (Roger)", val)
 
         val = RadioSettingValueBoolean(_mem.ste)
-        ste_setting = RadioSetting("ste", "Squelch tail elimination (STE)", val)
+        ste_setting = RadioSetting("ste", "Squelch tail elimination (STE)",
+                                   val)
 
         tmprte = list_def(_mem.rp_ste, RTE_LIST, 0)
         val = RadioSettingValueList(RTE_LIST, None, tmprte)
-        rp_ste_setting = RadioSetting("rp_ste",
-                        "Repeater squelch tail elimination (RP STE)", val)
+        rp_ste_setting = \
+            RadioSetting("rp_ste",
+                         "Repeater squelch tail elimination (RP STE)", val)
 
         val = RadioSettingValueBoolean(_mem.AM_fix)
         am_fix_setting = RadioSetting("AM_fix",
@@ -1980,14 +1992,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueList(ALARMMODE_LIST, None, tmpalarmmode)
         alarm_setting = RadioSetting("alarm_mode", "Alarm mode", val)
 
-################## Extra settings
+        # ----------------- Extra settings
 
         # S-meter
         tmp_s0 = -int(_mem.s0_level)
         tmp_s9 = -int(_mem.s9_level)
 
         if tmp_s0 not in range(-200, -91) or tmp_s9 not in range(-160, -51) \
-                                          or tmp_s9 < tmp_s0+9:
+           or tmp_s9 < tmp_s0+9:
+
             tmp_s0 = -130
             tmp_s9 = -76
         val = RadioSettingValueInteger(-200, -90, tmp_s0)
@@ -2020,7 +2033,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val.set_validate_callback(validate_password)
         pswd_setting = RadioSetting("password", "Power on password", val)
 
-################## FM radio
+        # ----------------- FM radio
 
         append_label(fmradio, "Channel", "Frequency [MHz]")
 
@@ -2030,15 +2043,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             if fmfreq < FMMIN or fmfreq > FMMAX:
                 freq_name = ""
             rs = RadioSetting("FM_" + str(i), "Ch " + str(i),
-                                RadioSettingValueString(0, 5, freq_name))
+                              RadioSettingValueString(0, 5, freq_name))
             fmradio.append(rs)
 
-################## Unlock settings
+        # ----------------- Unlock settings
 
         # F-LOCK
-        def validate_int_flock( value):
+        def validate_int_flock(value):
             mem_val = self._memobj.int_flock
-            if mem_val!=7 and value==FLOCK_LIST[7]:
+            if mem_val != 7 and value == FLOCK_LIST[7]:
                 msg = "\"" + value + "\" can only be enabled from radio menu"
                 raise InvalidValueError(msg)
             return value
@@ -2069,8 +2082,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         en_scrambler_setting = RadioSetting("int_scren",
                                             "Scrambler enabled (ScraEn)", val)
 
-
-################## Driver Info
+        # ----------------- Driver Info
 
         if self.FIRMWARE_VERSION == "":
             firmware = "To get the firmware version please download" \
@@ -2081,19 +2093,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         append_label(roinfo, "Firmware Version", firmware)
         append_label(roinfo, "Driver version", DRIVER_VERSION)
 
-################## Calibration
-
+        # ----------------- Calibration
 
         val = RadioSettingValueBoolean(False)
+
         def validate_upload_calibration(value):
             if value and not self.upload_calibration:
-                ret = wx.MessageBox("This option may brake your radio!!!\n"
-                    "You are doing this at your own risk.\n"
-                    "Make sure you have a working calibration backup.\n"
-                    "Don't use it unless you know what you're doing.",
-                    "Warning",
-                    wx.OK | wx.CANCEL | wx.CANCEL_DEFAULT | wx.ICON_WARNING)
-                value = ret==wx.OK
+                msg = "This option may brake your radio!!!\n" \
+                    "You are doing this at your own risk.\n" \
+                    "Make sure you have a working calibration backup.\n" \
+                    "Don't use it unless you know what you're doing."
+                ret = wx.MessageBox(msg, "Warning", wx.OK | wx.CANCEL |
+                                    wx.CANCEL_DEFAULT | wx.ICON_WARNING)
+                value = ret == wx.OK
             self.upload_calibration = value
             return value
 
@@ -2101,7 +2113,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         radio_setting = RadioSetting("upload_calibration",
                                      "Upload calibration", val)
         calibration.append(radio_setting)
-
 
         radio_setting_group = RadioSettingGroup("squelch_calibration",
                                                 "Squelch")
@@ -2138,13 +2149,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 name = prefix + "closeNoiseThr" + postfix
                 tempval = min_max_def(eval(name), 0, 127, 0)
                 val = RadioSettingValueInteger(0, 127, tempval)
-                radio_setting = RadioSetting(name, "Noise threshold close", val)
+                radio_setting = RadioSetting(name, "Noise threshold close",
+                                             val)
                 radio_setting_group.append(radio_setting)
 
                 name = prefix + "openGlitchThr" + postfix
                 tempval = min_max_def(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
-                radio_setting = RadioSetting(name, "Glitch threshold open", val)
+                radio_setting = RadioSetting(name, "Glitch threshold open",
+                                             val)
                 radio_setting_group.append(radio_setting)
 
                 name = prefix + "closeGlitchThr" + postfix
@@ -2154,7 +2167,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                                              val)
                 radio_setting_group.append(radio_setting)
 
-
+#
 
         radio_setting_group = RadioSettingGroup("rssi_level_calibration",
                                                 "RSSI levels")
@@ -2173,13 +2186,13 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 radio_setting = RadioSetting(name, "Level " + str(lvl), val)
                 radio_setting_group.append(radio_setting)
 
-
+#
 
         radio_setting_group = RadioSettingGroup("tx_power_calibration",
                                                 "TX power")
         calibration.append(radio_setting_group)
 
-        for bnd in range(0,7):
+        for bnd in range(0, 7):
             append_label(radio_setting_group, "=" * 6 + " TX power band "
                          + str(bnd+1) + " " + "=" * 300, "=" * 300)
             powers = {"low": "Low", "mid": "Medium", "hi": "High"}
@@ -2187,33 +2200,32 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 append_label(radio_setting_group, pwrn)
                 bounds = ["lower", "center", "upper"]
                 for bound in bounds:
-                    name = "_mem.cal.txp[" + str(bnd) + "]." + pwr + "." + bound
+                    name = f"_mem.cal.txp[{bnd}].{pwr}.{bound}"
                     tempval = min_max_def(eval(name), 0, 255, 0)
                     val = RadioSettingValueInteger(0, 255, tempval)
                     radio_setting = RadioSetting(name, bound.capitalize(), val)
                     radio_setting_group.append(radio_setting)
 
-
+#
 
         radio_setting_group = RadioSettingGroup("battery_calibration",
                                                 "Battery")
         calibration.append(radio_setting_group)
 
-        for lvl in range(0,6):
+        for lvl in range(0, 6):
             name = "_mem.cal.batLvl[" + str(lvl) + "]"
             temp_val = min_max_def(eval(name), 0, 4999, 4999)
             val = RadioSettingValueInteger(0, 4999, temp_val)
-            radio_setting = RadioSetting(name,
-                "Level " + str(lvl) +
-                (" (voltage calibration)" if lvl==3 else ""), val)
+            radio_setting = \
+                RadioSetting(name, "Level " + str(lvl) +
+                             (" (voltage calibration)" if lvl == 3 else ""),
+                             val)
             radio_setting_group.append(radio_setting)
-
-
 
         radio_setting_group = RadioSettingGroup("vox_calibration", "VOX")
         calibration.append(radio_setting_group)
 
-        for lvl in range(0,10):
+        for lvl in range(0, 10):
             append_label(radio_setting_group, "Level " + str(lvl + 1))
 
             name = "_mem.cal.vox1Thr[" + str(lvl) + "]"
@@ -2226,19 +2238,16 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             radio_setting = RadioSetting(name, "Off", val)
             radio_setting_group.append(radio_setting)
 
-
-
         radio_setting_group = RadioSettingGroup("mic_calibration",
                                                 "Microphone sensitivity")
         calibration.append(radio_setting_group)
 
-        for lvl in range(0,5):
+        for lvl in range(0, 5):
             name = "_mem.cal.micLevel[" + str(lvl) + "]"
             tempval = min_max_def(eval(name), 0, 31, 31)
             val = RadioSettingValueInteger(0, 31, tempval)
             radio_setting = RadioSetting(name, "Level " + str(lvl), val)
             radio_setting_group.append(radio_setting)
-
 
         radio_setting_group = RadioSettingGroup("other_calibration", "Other")
         calibration.append(radio_setting_group)
@@ -2261,7 +2270,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         radio_setting = RadioSetting(name, "DAC gain", val)
         radio_setting_group.append(radio_setting)
 
-################## LAYOUT
+        # -------- LAYOUT
 
         basic.append(squelch_setting)
         basic.append(rx_mode_setting)
@@ -2285,16 +2294,16 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         basic.append(logo1_setting)
         basic.append(logo2_setting)
 
-        append_label(basic,
-                     "=" * 6 + " Backlight settings " + "=" * 300, "=" * 300)
+        append_label(basic, "=" * 6 + " Backlight settings "
+                     + "=" * 300, "=" * 300)
 
         basic.append(back_lt_setting)
         basic.append(bl_min_setting)
         basic.append(bl_max_setting)
         basic.append(blt_trx_setting)
 
-        append_label(basic,
-                    "=" * 6 + " Audio related settings " + "=" * 300, "=" * 300)
+        append_label(basic, "=" * 6 + " Audio related settings "
+                     + "=" * 300, "=" * 300)
 
         if _mem.BUILD_OPTIONS.ENABLE_VOX:
             basic.append(vox_setting)
@@ -2391,7 +2400,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         _mem.modulation = tmp_mode / 2
         _mem.bandwidth = tmp_mode % 2
         if memory.mode == "USB":
-            _mem.bandwidth = 1 # narrow
+            _mem.bandwidth = 1  # narrow
 
         # frequency/offset
         _mem.freq = memory.freq/10
@@ -2433,10 +2442,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         else:
             _mem.txpower = POWER_LOW
 
-
-
-
-        ######### EXTRA SETTINGS
+        # -------- EXTRA SETTINGS
 
         def get_setting(name, def_val):
             if name in memory.extra:
