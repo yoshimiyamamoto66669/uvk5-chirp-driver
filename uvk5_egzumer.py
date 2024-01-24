@@ -342,7 +342,7 @@ POWER_MEDIUM = 0b01
 POWER_LOW = 0b00
 
 # dtmf_flags
-PTTID_LIST = ["OFF", "UP CODE", "DOWN CODE", "UP+DOWN CODE", "APOLLO QUINDAR"]
+PTTID_LIST = ["Off", "Up code", "Down code", "Up+Down code", "Apollo Quindar"]
 
 # power
 UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
@@ -351,12 +351,12 @@ UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
                      ]
 
 # scrambler
-SCRAMBLER_LIST = ["OFF", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
+SCRAMBLER_LIST = ["Off", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
                   "3100Hz", "3200Hz", "3300Hz", "3400Hz", "3500Hz"]
 # compander
-COMPANDER_LIST = ["OFF", "TX", "RX", "TX/RX"]
+COMPANDER_LIST = ["Off", "TX", "RX", "TX/RX"]
 # rx mode
-RXMODE_LIST = ["MAIN ONLY", "DUAL RX RESPOND", "CROSS BAND", "MAIN TX DUAL RX"]
+RXMODE_LIST = ["Main only", "Dual RX, respond", "Crossband", "Dual RX, TX on main"]
 # channel display mode
 CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
@@ -365,21 +365,21 @@ TALK_TIME_LIST = ["30 sec", "1 min", "2 min", "3 min", "4 min", "5 min",
                   "6 min", "7 min", "8 min", "9 min", "15 min"]
 
 # battery save
-BATSAVE_LIST = ["OFF", "1:1", "1:2", "1:3", "1:4"]
+BATSAVE_LIST = ["Off", "1:1", "1:2", "1:3", "1:4"]
 
 # battery type
 BATTYPE_LIST = ["1600 mAh", "2200 mAh"]
 # bat txt
-BAT_TXT_LIST = ["NONE", "VOLTAGE", "PERCENT"]
+BAT_TXT_LIST = ["None", "Voltage", "Percentage"]
 # Backlight auto mode
-BACKLIGHT_LIST = ["OFF", "5s", "10s", "20s", "1min", "2min", "4min",
+BACKLIGHT_LIST = ["Off", "5s", "10s", "20s", "1min", "2min", "4min",
                   "Always On"]
 
 # Backlight LVL
 BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 # Backlight _TX_RX_LIST
-BACKLIGHT_TX_RX_LIST = ["OFF", "TX", "RX", "TX/RX"]
+BACKLIGHT_TX_RX_LIST = ["Off", "TX", "RX", "TX/RX"]
 
 # steps TODO: change order
 STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25,
@@ -418,7 +418,7 @@ DTCS_CODES = [  # TODO: add negative codes
 ]
 
 # flock list extended
-FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
+FLOCK_LIST = ["Default+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "FCC HAM (144-148, 420-450)",
               "CE HAM (144-146, 430-440)",
               "GB HAM (144-148, 430-440)",
@@ -427,19 +427,19 @@ FLOCK_LIST = ["DEFAULT+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "Disable All",
               "Unlock All"]
 
-SCANRESUME_LIST = ["Listen 5 seconds and resume (TIMEOUT)",
-                   "Listen until signal dissapears (CARRIER)",
-                   "Stop scanning after receiving a signal (STOP)"]
-WELCOME_LIST = ["FULL", "MESSAGE", "VOLTAGE", "NONE"]
-VOICE_LIST = ["OFF", "Chinese", "English"]
+SCANRESUME_LIST = ["Listen 5 seconds and resume",
+                   "Listen until carrier dissapears",
+                   "Stop scanning after receiving a signal"]
+WELCOME_LIST = ["Full screen test", "User message", "Battery voltage", "None"]
+VOICE_LIST = ["Off", "Chinese", "English"]
 
 # ACTIVE CHANNEL
 TX_VFO_LIST = ["A", "B"]
-ALARMMODE_LIST = ["SITE", "TONE"]
-REMENDOFTALK_LIST = ["OFF", "ROGER", "MDC"]
-RTE_LIST = ["OFF", "100ms", "200ms", "300ms", "400ms",
+ALARMMODE_LIST = ["Site", "Tone"]
+ROGER_LIST = ["Off", "Roger beep", "MDC data burst"]
+RTE_LIST = ["Off", "100ms", "200ms", "300ms", "400ms",
             "500ms", "600ms", "700ms", "800ms", "900ms", "1000ms"]
-VOX_LIST = ["OFF", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
+VOX_LIST = ["Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 
 MEM_SIZE = 0x2000  # size of all memory
 PROG_SIZE = 0x1d00  # size of the memory that we will write
@@ -472,28 +472,29 @@ BANDS_WIDE = {
         }
 
 SCANLIST_LIST = ["None", "List1", "List2", "Both"]
-SCANLIST_SELECT_LIST = ["LIST1", "LIST2", "ALL"]
+SCANLIST_SELECT_LIST = ["List 1", "List 2", "All channels"]
 
 DTMF_CHARS = "0123456789ABCD*# "
 DTMF_CHARS_ID = "0123456789ABCDabcd"
 DTMF_CHARS_KILL = "0123456789ABCDabcd"
 DTMF_CHARS_UPDOWN = "0123456789ABCDabcd#* "
 DTMF_CODE_CHARS = "ABCD*# "
-DTMF_DECODE_RESPONSE_LIST = ["DO NOTHING", "RING", "REPLY", "BOTH"]
+DTMF_DECODE_RESPONSE_LIST = ["Do nothing", "Local ringing", "Replay response",
+                             "Local ringing + reply response"]
 
-KEYACTIONS_LIST = ["NONE",
-                   "FLASHLIGHT",
-                   "POWER",
-                   "MONITOR",
-                   "SCAN",
+KEYACTIONS_LIST = ["None",
+                   "Flashlight",
+                   "TX power",
+                   "Monitor",
+                   "Scan",
                    "VOX",
-                   "ALARM",
-                   "FM RADIO",
-                   "1750Hz TONE",
-                   "LOCK KEYPAD",
-                   "Switch main VFO (SWITCH VFO)",
-                   "Switch frequency/memory mode (VFO/MR)",
-                   "Switch demodulation (SWITCH DEMODUL)"
+                   "Alarm",
+                   "FM broadcast radio",
+                   "1750Hz tone",
+                   "Lock keypad",
+                   "Switch main VFO",
+                   "Switch frequency/memory mode",
+                   "Switch demodulation"
                    ]
 
 MIC_GAIN_LIST = ["+1.1dB", "+4.0dB", "+8.0dB", "+12.0dB", "+15.1dB"]
@@ -1578,11 +1579,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             has_flashlight = self._memobj.BUILD_OPTIONS.ENABLE_FLASHLIGHT
             lst = KEYACTIONS_LIST.copy()
             if not has_alarm:
-                lst.remove("ALARM")
+                lst.remove("Alarm")
             if not has1750:
-                lst.remove("1750Hz TONE")
+                lst.remove("1750Hz tone")
             if not has_flashlight:
-                lst.remove("FLASHLIGHT")
+                lst.remove("Flashlight")
 
             action_num = int(action_num)
             if action_num >= len(KEYACTIONS_LIST) or \
@@ -1946,8 +1947,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         beep_setting = RadioSetting("button_beep",
                                     "Key press beep sound (Beep)", val)
 
-        tmpalarmmode = list_def(_mem.roger_beep, REMENDOFTALK_LIST, 0)
-        val = RadioSettingValueList(REMENDOFTALK_LIST, None, tmpalarmmode)
+        tmpalarmmode = list_def(_mem.roger_beep, ROGER_LIST, 0)
+        val = RadioSettingValueList(ROGER_LIST, None, tmpalarmmode)
         roger_setting = RadioSetting("roger_beep",
                                      "End of transmission beep (Roger)", val)
 
