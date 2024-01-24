@@ -1205,11 +1205,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # TX_VFO  channel selected A,B
             elif elname == "TX_VFO":
-                _mem.TX_VFO = TX_VFO_LIST.index(str(element.value))
+                _mem.TX_VFO = int(element.value)
 
             # call channel
             elif elname == "call_channel":
-                _mem.call_channel = int(element.value)-1
+                _mem.call_channel = int(element.value)
 
             # squelch
             elif elname == "squelch":
@@ -1217,7 +1217,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # TOT
             elif elname == "tot":
-                _mem.max_talk_time = TALK_TIME_LIST.index(str(element.value))
+                _mem.max_talk_time = int(element.value)
 
             # NOAA autoscan
             elif elname == "noaa_autoscan":
@@ -1225,7 +1225,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # VOX
             elif elname == "vox":
-                voxvalue = VOX_LIST.index(str(element.value))
+                voxvalue = int(element.value)
                 _mem.vox_switch = voxvalue > 0
                 _mem.vox_level = (voxvalue - 1) if _mem.vox_switch else 0
 
@@ -1235,38 +1235,34 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Channel display mode
             elif elname == "channel_display_mode":
-                _mem.channel_display_mode = CHANNELDISP_LIST.index(
-                    str(element.value))
+                _mem.channel_display_mode = int(element.value)
 
             # RX Mode
             elif elname == "rx_mode":
-                tmptxmode = RXMODE_LIST.index(str(element.value))
+                tmptxmode = int(element.value)
                 tmpmainvfo = _mem.TX_VFO + 1
                 _mem.crossband = tmpmainvfo * bool(tmptxmode & 0b10)
                 _mem.dual_watch = tmpmainvfo * bool(tmptxmode & 0b01)
 
             # Battery Save
             elif elname == "battery_save":
-                _mem.battery_save = BATSAVE_LIST.index(str(element.value))
+                _mem.battery_save = int(element.value)
 
             # Backlight auto mode
             elif elname == "backlight_time":
-                _mem.backlight_time = BACKLIGHT_LIST.index(str(element.value))
+                _mem.backlight_time = int(element.value)
 
             # Backlight min
             elif elname == "backlight_min":
-                _mem.backlight_min = \
-                        BACKLIGHT_LVL_LIST.index(str(element.value))
+                _mem.backlight_min = int(element.value)
 
             # Backlight max
             elif elname == "backlight_max":
-                _mem.backlight_max = \
-                        BACKLIGHT_LVL_LIST.index(str(element.value))
+                _mem.backlight_max = int(element.value)
 
             # Backlight TX_RX
             elif elname == "backlight_on_TX_RX":
-                _mem.backlight_on_TX_RX = \
-                        BACKLIGHT_TX_RX_LIST.index(str(element.value))
+                _mem.backlight_on_TX_RX = int(element.value)
             # AM_fix
             elif elname == "AM_fix":
                 _mem.AM_fix = int(element.value)
@@ -1277,8 +1273,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Batterie txt
             elif elname == "_mem.battery_text":
-                _mem.battery_text = \
-                        BAT_TXT_LIST.index(str(element.value))
+                _mem.battery_text = int(element.value)
 
             # Tail tone elimination
             elif elname == "ste":
@@ -1294,8 +1289,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Scan resume mode
             elif elname == "scan_resume_mode":
-                _mem.scan_resume_mode = SCANRESUME_LIST.index(
-                    str(element.value))
+                _mem.scan_resume_mode = int(element.value)
 
             # Keypad lock
             elif elname == "key_lock":
@@ -1307,11 +1301,11 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Power on display mode
             elif elname == "welcome_mode":
-                _mem.power_on_dispmode = WELCOME_LIST.index(str(element.value))
+                _mem.power_on_dispmode = int(element.value)
 
             # Keypad Tone
             elif elname == "voice":
-                _mem.voice = VOICE_LIST.index(str(element.value))
+                _mem.voice = int(element.value)
 
             elif elname == "s0_level":
                 _mem.s0_level = -int(element.value)
@@ -1327,16 +1321,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # Alarm mode
             elif elname == "alarm_mode":
-                _mem.alarm_mode = ALARMMODE_LIST.index(str(element.value))
+                _mem.alarm_mode = int(element.value)
 
             # Reminding of end of talk
             elif elname == "roger_beep":
-                _mem.roger_beep = REMENDOFTALK_LIST.index(str(element.value))
+                _mem.roger_beep = int(element.value)
 
             # Repeater tail tone elimination
             elif elname == "rp_ste":
-                _mem.rp_ste = RTE_LIST.index(
-                    str(element.value))
+                _mem.rp_ste = int(element.value)
 
             # Logo string 1
             elif elname == "logo1":
@@ -1352,7 +1345,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # FLOCK
             elif elname == "int_flock":
-                _mem.int_flock = FLOCK_LIST.index(str(element.value))
+                _mem.int_flock = int(element.value)
 
             # 350TX
             elif elname == "int_350tx":
@@ -1380,7 +1373,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # battery type
             elif elname == "Battery_type":
-                _mem.Battery_type = BATTYPE_LIST.index(str(element.value))
+                _mem.Battery_type = int(element.value)
             # fm radio
             for i in range(1, 21):
                 freqname = "FM_" + str(i)
@@ -1400,8 +1393,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # dtmf settings
             if elname == "dtmf_side_tone":
-                _mem.dtmf.side_tone = \
-                        int(element.value)
+                _mem.dtmf.side_tone = int(element.value)
 
             elif elname == "dtmf_separate_code":
                 _mem.dtmf.separate_code = str(element.value)
@@ -1410,24 +1402,19 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 _mem.dtmf.group_call_code = element.value
 
             elif elname == "dtmf_decode_response":
-                _mem.dtmf.decode_response = \
-                        DTMF_DECODE_RESPONSE_LIST.index(str(element.value))
+                _mem.dtmf.decode_response = int(element.value)
 
             elif elname == "dtmf_auto_reset_time":
-                _mem.dtmf.auto_reset_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.auto_reset_time = int(int(element.value)/10)
 
             elif elname == "dtmf_preload_time":
-                _mem.dtmf.preload_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.preload_time = int(int(element.value)/10)
 
             elif elname == "dtmf_first_code_persist_time":
-                _mem.dtmf.first_code_persist_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.first_code_persist_time = int(int(element.value)/10)
 
             elif elname == "dtmf_hash_persist_time":
-                _mem.dtmf.hash_persist_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.hash_persist_time = int(int(element.value)/10)
 
             elif elname == "dtmf_code_persist_time":
                 _mem.dtmf.code_persist_time = \
@@ -1478,22 +1465,16 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
             # scanlist stuff
             if elname == "slDef":
-                _mem.slDef = SCANLIST_SELECT_LIST.index(
-                        str(element.value))
+                _mem.slDef = int(element.value)
 
             elif elname == "sl1PriorEnab":
-                _mem.sl1PriorEnab = \
-                        int(element.value)
+                _mem.sl1PriorEnab = int(element.value)
 
             elif elname == "sl2PriorEnab":
-                _mem.sl2PriorEnab = \
-                        int(element.value)
+                _mem.sl2PriorEnab = int(element.value)
 
-            elif elname == "sl1PriorCh1" or \
-                    elname == "sl1PriorCh2" or \
-                    elname == "sl2PriorCh1" or \
-                    elname == "sl2PriorCh2":
-
+            elif elname in ["sl1PriorCh1", "sl1PriorCh2", "sl2PriorCh1",
+                            "sl2PriorCh2"]:
                 val = int(element.value)
 
                 if val > 200 or val < 1:
@@ -1501,34 +1482,23 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                 else:
                     val -= 1
 
-                if elname == "sl1PriorCh1":
-                    _mem.sl1PriorCh1 = val
-                if elname == "sl1PriorCh2":
-                    _mem.sl1PriorCh2 = val
-                if elname == "sl2PriorCh1":
-                    _mem.sl2PriorCh1 = val
-                if elname == "sl2PriorCh2":
-                    _mem.sl2PriorCh2 = val
+                _mem[elname] = val
+
 
             if elname == "key1_shortpress_action":
-                _mem.key1_shortpress_action = KEYACTIONS_LIST.index(
-                        str(element.value))
+                _mem.key1_shortpress_action = int(element.value)
 
             elif elname == "key1_longpress_action":
-                _mem.key1_longpress_action = KEYACTIONS_LIST.index(
-                        str(element.value))
+                _mem.key1_longpress_action = int(element.value)
 
             elif elname == "key2_shortpress_action":
-                _mem.key2_shortpress_action = KEYACTIONS_LIST.index(
-                        str(element.value))
+                _mem.key2_shortpress_action = int(element.value)
 
             elif elname == "key2_longpress_action":
-                _mem.key2_longpress_action = KEYACTIONS_LIST.index(
-                        str(element.value))
+                _mem.key2_longpress_action = int(element.value)
 
             elif elname == "keyM_longpress_action":
-                _mem.keyM_longpress_action = KEYACTIONS_LIST.index(
-                        str(element.value))
+                _mem.keyM_longpress_action = int(element.value)
 
             elif element.changed() and elname.startswith("_mem.cal."):
                 exec(elname + " = element.value.get_value()")
@@ -1795,37 +1765,35 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         scanl.append(rs)
 
         val = RadioSettingValueBoolean(_mem.sl1PriorEnab)
-        rs = RadioSetting("sl1PriorEnab",
-                          "Scanlist 1 priority channel scan", val)
+        rs = RadioSetting("sl1PriorEnab", "List 1 priority channel scan", val)
         scanl.append(rs)
 
-        tmpch = min_max_def(_mem.sl1PriorCh1 + 1, 0, 200, 0)
-        val = RadioSettingValueInteger(0, 200, tmpch)
-        rs = RadioSetting("sl1PriorCh1",
-                          "Scanlist 1 priority channel 1 (0 - OFF)", val)
+        ch_list = ["None"]
+        for ch in range(1, 201):
+            ch_list.append("Channel M" + str(ch))
+
+        tmpch = list_def(_mem.sl1PriorCh1 + 1, ch_list, 0)
+        val = RadioSettingValueList(ch_list, None, tmpch)
+        rs = RadioSetting("sl1PriorCh1", "List 1 priority channel 1", val)
         scanl.append(rs)
 
-        tmpch = min_max_def(_mem.sl1PriorCh2 + 1, 0, 200, 0)
-        val = RadioSettingValueInteger(0, 200, tmpch)
-        rs = RadioSetting("sl1PriorCh2",
-                          "Scanlist 1 priority channel 2 (0 - OFF)", val)
+        tmpch = list_def(_mem.sl1PriorCh2 + 1, ch_list, 0)
+        val = RadioSettingValueList(ch_list, None, tmpch)
+        rs = RadioSetting("sl1PriorCh2", "List 1 priority channel 2", val)
         scanl.append(rs)
 
         val = RadioSettingValueBoolean(_mem.sl2PriorEnab)
-        rs = RadioSetting("sl2PriorEnab",
-                          "Scanlist 2 priority channel scan", val)
+        rs = RadioSetting("sl2PriorEnab", "List 2 priority channel scan", val)
         scanl.append(rs)
 
-        tmpch = min_max_def(_mem.sl2PriorCh1 + 1, 0, 200, 0)
-        val = RadioSettingValueInteger(0, 200, tmpch)
-        rs = RadioSetting("sl2PriorCh1",
-                          "Scanlist 2 priority channel 1 (0 - OFF)", val)
+        tmpch = list_def(_mem.sl2PriorCh1 + 1, ch_list, 0)
+        val = RadioSettingValueList(ch_list, None, tmpch)
+        rs = RadioSetting("sl2PriorCh1", "List 2 priority channel 1", val)
         scanl.append(rs)
 
-        tmpch = min_max_def(_mem.sl2PriorCh2 + 1, 0, 200, 0)
-        val = RadioSettingValueInteger(0, 200, tmpch)
-        rs = RadioSetting("sl2PriorCh2",
-                          "Scanlist 2 priority channel 2 (0 - OFF)", val)
+        tmpch = list_def(_mem.sl2PriorCh2 + 1, ch_list, 0)
+        val = RadioSettingValueList(ch_list, None, tmpch)
+        rs = RadioSetting("sl2PriorCh2", "List 2 priority channel 2", val)
         scanl.append(rs)
 
         # ----------------- Basic settings
@@ -1849,7 +1817,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         freq1_setting = RadioSetting("VFO_B_chn",
                                      "VFO B current channel/band", val)
 
-        tmptxvfo = list_def(_mem.TX_VFO, TX_VFO_LIST, "A")
+        tmptxvfo = list_def(_mem.TX_VFO, TX_VFO_LIST, 0)
         val = RadioSettingValueList(TX_VFO_LIST, None, tmptxvfo)
         tx_vfo_setting = RadioSetting("TX_VFO", "Main VFO", val)
 
@@ -1857,10 +1825,15 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueInteger(0, 9, tmpsq)
         squelch_setting = RadioSetting("squelch", "Squelch (Sql)", val)
 
-        tmpc = min_max_def(_mem.call_channel + 1, 1, 200, 1)
-        val = RadioSettingValueInteger(1, 200, tmpc)
+
+        ch_list = []
+        for ch in range(1, 201):
+            ch_list.append("Channel M" + str(ch))
+
+        tmpc = list_def(_mem.call_channel, ch_list, 0)
+        val = RadioSettingValueList(ch_list, None, tmpc)
         call_channel_setting = RadioSetting("call_channel",
-                                            "One key call channel", val)
+                                            "One key call channel (1 Call)", val)
 
         val = RadioSettingValueBoolean(_mem.key_lock)
         keypad_cock_setting = RadioSetting("key_lock", "Keypad locked", val)
@@ -1870,12 +1843,12 @@ class UVK5Radio(chirp_common.CloneModeRadio):
             RadioSetting("auto_keypad_lock",
                          "Auto keypad lock (KeyLck)", val)
 
-        tmptot = list_def(_mem.max_talk_time,  TALK_TIME_LIST, "1 min")
+        tmptot = list_def(_mem.max_talk_time,  TALK_TIME_LIST, 1)
         val = RadioSettingValueList(TALK_TIME_LIST, None, tmptot)
         tx_t_out_setting = RadioSetting("tot",
                                         "Max talk, TX Time Out (TxTOut)", val)
 
-        tmpbatsave = list_def(_mem.battery_save, BATSAVE_LIST, "1:4")
+        tmpbatsave = list_def(_mem.battery_save, BATSAVE_LIST, 4)
         val = RadioSettingValueList(BATSAVE_LIST, None, tmpbatsave)
         bat_save_setting = RadioSetting("battery_save",
                                         "Battery save (BatSav)", val)
@@ -1884,7 +1857,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         noaa_auto_scan_setting = RadioSetting("noaa_autoscan",
                                               "NOAA Autoscan (NOAA-S)", val)
 
-        tmpmicgain = list_def(_mem.mic_gain, MIC_GAIN_LIST, "+8.0dB")
+        tmpmicgain = list_def(_mem.mic_gain, MIC_GAIN_LIST, 2)
         val = RadioSettingValueList(MIC_GAIN_LIST, None, tmpmicgain)
         mic_gain_setting = RadioSetting("mic_gain", "Mic Gain (Mic)", val)
 
@@ -1893,7 +1866,7 @@ class UVK5Radio(chirp_common.CloneModeRadio):
                                        "Microphone Bar display (MicBar)", val)
 
         tmpchdispmode = list_def(_mem.channel_display_mode,
-                                 CHANNELDISP_LIST, "Frequency")
+                                 CHANNELDISP_LIST, 0)
         val = RadioSettingValueList(CHANNELDISP_LIST, None, tmpchdispmode)
         ch_disp_setting = RadioSetting("channel_display_mode",
                                        "Channel display mode (ChDisp)", val)
@@ -1908,14 +1881,14 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
         val = RadioSettingValueString(0, 12, logo1)
         logo1_setting = RadioSetting("logo1",
-                                     "Message line 1 ( MAX 12 characters )",
+                                     "Message line 1",
                                      val)
 
         logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
         logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
         val = RadioSettingValueString(0, 12, logo2)
         logo2_setting = RadioSetting("logo2",
-                                     "Message line 2 ( MAX 12 characters )",
+                                     "Message line 2",
                                      val)
 
         tmpbattxt = list_def(_mem.battery_text, BAT_TXT_LIST, 2)
