@@ -94,7 +94,7 @@ is_scanlist2:1,
 compander:2,
 is_free:1,
 band:3;
-} ch_attr[200];
+} ch_attr[207];
 
 #seekto 0xe40;
 ul16 fmfreq[20];
@@ -1014,16 +1014,19 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             is_empty = True
 
         # We'll also look at the channel attributes if a memory has them
-        tmpscn = SCANLIST_LIST[0]
+        tmpscn = 0
         tmp_comp = 0
         if ch_num < 200:
             _mem3 = self._memobj.ch_attr[ch_num]
             # free memory bit
-            if _mem3.is_free:
-                is_empty = True
+            is_empty |= _mem3.is_free
             # scanlists
-            temp_val = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
-            tmpscn = SCANLIST_LIST[temp_val]
+            tmpscn = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
+            tmp_comp = list_def(_mem3.compander, COMPANDER_LIST, 0)
+        elif ch_num < 214:
+            att_num = 200 + int((ch_num - 200) / 2)
+            _mem3 = self._memobj.ch_attr[att_num]
+            is_empty |= _mem3.is_free
             tmp_comp = list_def(_mem3.compander, COMPANDER_LIST, 0)
 
         if is_empty:
@@ -1167,7 +1170,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         rs = RadioSetting("compander", "Compander (Compnd)", val)
         mem.extra.append(rs)
 
-        val = RadioSettingValueList(SCANLIST_LIST, tmpscn)
+        val = RadioSettingValueList(SCANLIST_LIST, None, tmpscn)
         rs = RadioSetting("scanlists", "Scanlists (SList)", val)
         mem.extra.append(rs)
 
@@ -2342,79 +2345,75 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         This is called when a user edits a memory in the UI
         """
         number = memory.number-1
+        att_num = number if number < 200 else 200 + int((number - 200) / 2)
 
         # Get a low-level memory object mapped to the image
-        _mem = self._memobj.channel[number]
-        _mem4 = self._memobj
+        _mem_chan = self._memobj.channel[number]
+        _mem_attr = self._memobj.ch_attr[att_num]
+
+        _mem_attr.is_scanlist1 = 0
+        _mem_attr.is_scanlist2 = 0
+        _mem_attr.compander = 0
+        _mem_attr.is_free = 1
+        _mem_attr.band = 0x7   
+
         # empty memory
         if memory.empty:
-            _mem.set_raw("\xFF" * 16)
+            _mem_chan.set_raw("\xFF" * 16)
             if number < 200:
-                _mem2 = self._memobj.channelname[number]
-                _mem2.set_raw("\xFF" * 16)
-                _mem4.ch_attr[number].is_scanlist1 = 0
-                _mem4.ch_attr[number].is_scanlist2 = 0
-                _mem4.ch_attr[number].compander = 0
-                _mem4.ch_attr[number].is_free = 1
-                _mem4.ch_attr[number].band = 0x7
+                _mem_chname = self._memobj.channelname[number]
+                _mem_chname.set_raw("\xFF" * 16)
             return memory
-
-        if number < 200:
-            _mem4.ch_attr[number].is_scanlist1 = 0
-            _mem4.ch_attr[number].is_scanlist2 = 0
-            _mem4.ch_attr[number].compander = 0
-            _mem4.ch_attr[number].is_free = 1
-            _mem4.ch_attr[number].band = 0x7
 
         # find band
         band = self._find_band(memory.freq)
 
         # mode
         tmp_mode = self.get_features().valid_modes.index(memory.mode)
-        _mem.modulation = tmp_mode / 2
-        _mem.bandwidth = tmp_mode % 2
+        _mem_chan.modulation = tmp_mode / 2
+        _mem_chan.bandwidth = tmp_mode % 2
         if memory.mode == "USB":
-            _mem.bandwidth = 1  # narrow
+            _mem_chan.bandwidth = 1  # narrow
 
         # frequency/offset
-        _mem.freq = memory.freq/10
-        _mem.offset = memory.offset/10
+        _mem_chan.freq = memory.freq/10
+        _mem_chan.offset = memory.offset/10
 
         if memory.duplex == "":
-            _mem.offset = 0
-            _mem.offsetDir = 0
+            _mem_chan.offset = 0
+            _mem_chan.offsetDir = 0
         elif memory.duplex == '-':
-            _mem.offsetDir = FLAGS1_OFFSET_MINUS
+            _mem_chan.offsetDir = FLAGS1_OFFSET_MINUS
         elif memory.duplex == '+':
-            _mem.offsetDir = FLAGS1_OFFSET_PLUS
+            _mem_chan.offsetDir = FLAGS1_OFFSET_PLUS
         elif memory.duplex == 'off':
             # we fake tx disable by setting the tx freq to 0 MHz
-            _mem.offsetDir = FLAGS1_OFFSET_MINUS
-            _mem.offset = _mem.freq
+            _mem_chan.offsetDir = FLAGS1_OFFSET_MINUS
+            _mem_chan.offset = _mem_chan.freq
         # set band
-        if number < 200:
-            _mem4.ch_attr[number].is_free = 0
-            _mem4.ch_attr[number].band = band
+
+        _mem_attr.is_free = 0
+        _mem_attr.band = band
 
         # channels >200 are the 14 VFO chanells and don't have names
         if number < 200:
-            _mem2 = self._memobj.channelname[number]
+            _mem_chname = self._memobj.channelname[number]
             tag = memory.name.ljust(10) + "\x00"*6
-            _mem2.name = tag  # Store the alpha tag
+            _mem_chname.name = tag  # Store the alpha tag
 
         # tone data
-        self._set_tone(memory, _mem)
+        self._set_tone(memory, _mem_chan)
 
         # step
-        _mem.step = STEPS.index(memory.tuning_step)
+        _mem_chan.step = STEPS.index(memory.tuning_step)
 
         # tx power
         if str(memory.power) == str(UVK5_POWER_LEVELS[2]):
-            _mem.txpower = POWER_HIGH
+            _mem_chan.txpower = POWER_HIGH
         elif str(memory.power) == str(UVK5_POWER_LEVELS[1]):
-            _mem.txpower = POWER_MEDIUM
+            _mem_chan.txpower = POWER_MEDIUM
         else:
-            _mem.txpower = POWER_LOW
+            _mem_chan.txpower = POWER_LOW
 
         # -------- EXTRA SETTINGS
 
@@ -2423,15 +2422,15 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
                 return int(memory.extra[name].value)
             return def_val
 
-        _mem.busyChLockout = get_setting("busyChLockout", False)
-        _mem.dtmf_pttid = get_setting("pttid", 0)
-        _mem.freq_reverse = get_setting("frev", False)
-        _mem.dtmf_decode = get_setting("dtmfdecode", False)
-        _mem.scrambler = get_setting("scrambler", 0)
-        _mem4.ch_attr[number].compander = get_setting("compander", 0)
+        _mem_chan.busyChLockout = get_setting("busyChLockout", False)
+        _mem_chan.dtmf_pttid = get_setting("pttid", 0)
+        _mem_chan.freq_reverse = get_setting("frev", False)
+        _mem_chan.dtmf_decode = get_setting("dtmfdecode", False)
+        _mem_chan.scrambler = get_setting("scrambler", 0)
+        _mem_attr.compander = get_setting("compander", 0)
         if number < 200:
             tmp_val = get_setting("scanlists", 0)
-            _mem4.ch_attr[number].is_scanlist1 = bool(tmp_val & 1)
-            _mem4.ch_attr[number].is_scanlist2 = bool(tmp_val & 2)
+            _mem_attr.is_scanlist1 = bool(tmp_val & 1)
+            _mem_attr.is_scanlist2 = bool(tmp_val & 2)
 
         return memory
