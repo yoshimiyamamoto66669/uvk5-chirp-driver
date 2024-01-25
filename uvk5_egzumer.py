@@ -2355,7 +2355,7 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         _mem_attr.is_scanlist2 = 0
         _mem_attr.compander = 0
         _mem_attr.is_free = 1
-        _mem_attr.band = 0x7   
+        _mem_attr.band = 0x7
 
         # empty memory
         if memory.empty:
