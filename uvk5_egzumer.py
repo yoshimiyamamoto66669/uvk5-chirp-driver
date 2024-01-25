@@ -356,7 +356,8 @@ SCRAMBLER_LIST = ["Off", "2600Hz", "2700Hz", "2800Hz", "2900Hz", "3000Hz",
 # compander
 COMPANDER_LIST = ["Off", "TX", "RX", "TX/RX"]
 # rx mode
-RXMODE_LIST = ["Main only", "Dual RX, respond", "Crossband", "Dual RX, TX on main"]
+RXMODE_LIST = ["Main only", "Dual RX, respond", "Crossband",
+               "Dual RX, TX on main"]
 # channel display mode
 CHANNELDISP_LIST = ["Frequency", "Channel Number", "Name", "Name + Frequency"]
 
@@ -764,8 +765,8 @@ def list_def(value, lst, default):
 
 
 @directory.register
-class UVK5Radio(chirp_common.CloneModeRadio):
-    """Quansheng UV-K5"""
+class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
+    """Quansheng UV-K5 (egzumer)"""
     VENDOR = "Quansheng"
     MODEL = "UV-K5 (egzumer)"
     BAUD_RATE = 38400
@@ -809,27 +810,27 @@ class UVK5Radio(chirp_common.CloneModeRadio):
     def get_prompts(cls):
         rp = chirp_common.RadioPrompts()
         rp.experimental = \
-            _('This is an experimental driver for the Quansheng UV-K5. '
-              'It may harm your radio, or worse. Use at your own risk.\n\n'
-              'Before attempting to do any changes please download'
-              'the memory image from the radio with chirp '
-              'and keep it. This can be later used to recover the '
-              'original settings. \n\n'
-              'some details are not yet implemented')
-        rp.pre_download = _(
-            "1. Turn radio on.\n"
-            "2. Connect cable to mic/spkr connector.\n"
-            "3. Make sure connector is firmly connected.\n"
-            "4. Click OK to download image from device.\n\n"
-            "It may not work if you turn on the radio "
-            "with the cable already attached\n")
-        rp.pre_upload = _(
-            "1. Turn radio on.\n"
-            "2. Connect cable to mic/spkr connector.\n"
-            "3. Make sure connector is firmly connected.\n"
-            "4. Click OK to upload the image to device.\n\n"
-            "It may not work if you turn on the radio "
-            "with the cable already attached")
+            'This is an experimental driver for the Quansheng UV-K5. ' \
+            'It may harm your radio, or worse. Use at your own risk.\n\n' \
+            'Before attempting to do any changes please download' \
+            'the memory image from the radio with chirp ' \
+            'and keep it. This can be later used to recover the ' \
+            'original settings. \n\n' \
+            'some details are not yet implemented'
+        rp.pre_download = \
+            "1. Turn radio on.\n" \
+            "2. Connect cable to mic/spkr connector.\n" \
+            "3. Make sure connector is firmly connected.\n" \
+            "4. Click OK to download image from device.\n\n" \
+            "It may not work if you turn on the radio " \
+            "with the cable already attached\n"
+        rp.pre_upload = \
+            "1. Turn radio on.\n" \
+            "2. Connect cable to mic/spkr connector.\n" \
+            "3. Make sure connector is firmly connected.\n" \
+            "4. Click OK to upload the image to device.\n\n" \
+            "It may not work if you turn on the radio " \
+            "with the cable already attached"
         return rp
 
     # Return information about this radio's features, including
@@ -1484,7 +1485,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
 
                 _mem[elname] = val
 
-
             if elname == "key1_shortpress_action":
                 _mem.key1_shortpress_action = int(element.value)
 
@@ -1825,7 +1825,6 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         val = RadioSettingValueInteger(0, 9, tmpsq)
         squelch_setting = RadioSetting("squelch", "Squelch (Sql)", val)
 
-
         ch_list = []
         for ch in range(1, 201):
             ch_list.append("Channel M" + str(ch))
@@ -1833,7 +1832,8 @@ class UVK5Radio(chirp_common.CloneModeRadio):
         tmpc = list_def(_mem.call_channel, ch_list, 0)
         val = RadioSettingValueList(ch_list, None, tmpc)
         call_channel_setting = RadioSetting("call_channel",
-                                            "One key call channel (1 Call)", val)
+                                            "One key call channel (1 Call)",
+                                            val)
 
         val = RadioSettingValueBoolean(_mem.key_lock)
         keypad_cock_setting = RadioSetting("key_lock", "Keypad locked", val)
