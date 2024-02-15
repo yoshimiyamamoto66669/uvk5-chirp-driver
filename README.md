@@ -10,13 +10,13 @@ Licensed cc-by-sa-4.0
 # How to use
 
 > [!IMPORTANT]
-> This driver with some slight modifications is added to official [CHIRP release](https://chirp.danplanet.com/projects/chirp/wiki/Download). Choose `UV-K5` radio model there. It will automatically recognize egzumer firmware if it is on your radio, and all extra options will be available.<br><br>
+> This driver is added to official [CHIRP release](https://chirp.danplanet.com/projects/chirp/wiki/Download).<br><br>
+Choose `UV-K5` radio model in the CHIRP download window. It will automatically recognize egzumer firmware if it is on your radio, and all extra options will be available. You should see radio model changed to `UV-K5 egzumer` in the "Upload to radio..." function window.<br><br>
 > If you find some issues that are clearly related to this driver report them here and not to the CHIRP team.<br><br>
-> This repo contains my original implementation that doesn't implement firmware detection yet, I will update it later. The rest of this readme will describe my unmodified version and you will have to select the `UV-K5 (egzumer)` radio model if you are using it.
 
-You can use modified version of CHIRP from [releases](https://github.com/egzumer/uvk5-chirp-driver/releases). The modified CHIRP is built from [source code](https://github.com/egzumer/chirp/tree/egzumer) and contains the driver. It is packed using pyinstaller into one file for convinience, however some antiviruses don't like that and [report it as a threat](https://stackoverflow.com/questions/43777106/program-made-with-pyinstaller-now-seen-as-a-trojan-horse-by-avg). If you don't trust this file, then use the other method.
-
-You can also use development version of driver [uvk5_EGZUMER.py](uvk5_egzumer.py?raw=1) (right click, "Save link as...") and load it to CHIRP manually.
+You can also use development version of the driver [uvk5_EGZUMER.py](uvk5_egzumer.py?raw=1) (right click, "Save link as...") and load it to CHIRP manually.
+> [!IMPORTANT]
+This driver is an extension of the UV-K5 driver that was modified to accept driver extensions. You have to use CHIRP version that was released after 01.02.2024 that contains the correct base driver. 
 
 ## Loading with menu
 1. go to menu `Help` and turn on `Developer mode`
