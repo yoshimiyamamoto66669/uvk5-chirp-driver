@@ -24,7 +24,7 @@ from chirp.drivers import uvk5
 from chirp.settings import RadioSetting, RadioSettingGroup, \
     RadioSettingValueBoolean, RadioSettingValueList, \
     RadioSettingValueInteger, RadioSettingValueString, \
-    RadioSettings, InvalidValueError
+    RadioSettings, InvalidValueError, RadioSettingSubGroup
 
 LOG = logging.getLogger(__name__)
 
@@ -358,7 +358,7 @@ FLOCK_LIST = ["Default+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "Unlock All"]
 
 SCANRESUME_LIST = ["Listen 5 seconds and resume",
-                   "Listen until carrier dissapears",
+                   "Listen until carrier disappears",
                    "Stop scanning after receiving a signal"]
 WELCOME_LIST = ["Full screen test", "User message", "Battery voltage", "None"]
 VOICE_LIST = ["Off", "Chinese", "English"]
@@ -511,6 +511,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
     # Convert the raw byte array into a memory object structure
     def process_mmap(self):
+        self._check_firmware_at_load()
         self._memobj = bitwise.parse(MEM_FORMAT, self._mmap)
 
     def _get_mem_mode(self, _mem):
@@ -572,7 +573,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # VFO_A e80 ScreenChannel_A
             if elname == "VFO_A_chn":
-                _mem.ScreenChannel_A = int(element.value)
+                _mem.ScreenChannel_A = element.value
                 if _mem.ScreenChannel_A < 200:
                     _mem.MrChannel_A = _mem.ScreenChannel_A
                 elif _mem.ScreenChannel_A < 207:
@@ -582,7 +583,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # VFO_B e83
             elif elname == "VFO_B_chn":
-                _mem.ScreenChannel_B = int(element.value)
+                _mem.ScreenChannel_B = element.value
                 if _mem.ScreenChannel_B < 200:
                     _mem.MrChannel_B = _mem.ScreenChannel_B
                 elif _mem.ScreenChannel_B < 207:
@@ -592,37 +593,37 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # TX_VFO  channel selected A,B
             elif elname == "TX_VFO":
-                _mem.TX_VFO = int(element.value)
+                _mem.TX_VFO = element.value
 
             # call channel
             elif elname == "call_channel":
-                _mem.call_channel = int(element.value)
+                _mem.call_channel = element.value
 
             # squelch
             elif elname == "squelch":
-                _mem.squelch = int(element.value)
+                _mem.squelch = element.value
 
             # TOT
             elif elname == "tot":
-                _mem.max_talk_time = int(element.value)
+                _mem.max_talk_time = element.value
 
             # NOAA autoscan
             elif elname == "noaa_autoscan":
-                _mem.noaa_autoscan = int(element.value)
+                _mem.noaa_autoscan = element.value
 
             # VOX
             elif elname == "vox":
-                voxvalue = int(element.value)
-                _mem.vox_switch = voxvalue > 0
+                voxvalue = element.value
+                _mem.vox_switch = int(voxvalue) > 0
                 _mem.vox_level = (voxvalue - 1) if _mem.vox_switch else 0
 
             # mic gain
             elif elname == "mic_gain":
-                _mem.mic_gain = int(element.value)
+                _mem.mic_gain = element.value
 
             # Channel display mode
             elif elname == "channel_display_mode":
-                _mem.channel_display_mode = int(element.value)
+                _mem.channel_display_mode = element.value
 
             # RX Mode
             elif elname == "rx_mode":
@@ -633,145 +634,145 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # Battery Save
             elif elname == "battery_save":
-                _mem.battery_save = int(element.value)
+                _mem.battery_save = element.value
 
             # Backlight auto mode
             elif elname == "backlight_time":
-                _mem.backlight_time = int(element.value)
+                _mem.backlight_time = element.value
 
             # Backlight min
             elif elname == "backlight_min":
-                _mem.backlight_min = int(element.value)
+                _mem.backlight_min = element.value
 
             # Backlight max
             elif elname == "backlight_max":
-                _mem.backlight_max = int(element.value)
+                _mem.backlight_max = element.value
 
             # Backlight TX_RX
             elif elname == "backlight_on_TX_RX":
-                _mem.backlight_on_TX_RX = int(element.value)
+                _mem.backlight_on_TX_RX = element.value
             # AM_fix
             elif elname == "AM_fix":
-                _mem.AM_fix = int(element.value)
+                _mem.AM_fix = element.value
 
             # mic_bar
             elif elname == "mem.mic_bar":
-                _mem.mic_bar = int(element.value)
+                _mem.mic_bar = element.value
 
             # Batterie txt
             elif elname == "_mem.battery_text":
-                _mem.battery_text = int(element.value)
+                _mem.battery_text = element.value
 
             # Tail tone elimination
             elif elname == "ste":
-                _mem.ste = int(element.value)
+                _mem.ste = element.value
 
             # VFO Open
             elif elname == "freq_mode_allowed":
-                _mem.freq_mode_allowed = int(element.value)
+                _mem.freq_mode_allowed = element.value
 
             # Beep control
             elif elname == "button_beep":
-                _mem.button_beep = int(element.value)
+                _mem.button_beep = element.value
 
             # Scan resume mode
             elif elname == "scan_resume_mode":
-                _mem.scan_resume_mode = int(element.value)
+                _mem.scan_resume_mode = element.value
 
             # Keypad lock
             elif elname == "key_lock":
-                _mem.key_lock = int(element.value)
+                _mem.key_lock = element.value
 
             # Auto keypad lock
             elif elname == "auto_keypad_lock":
-                _mem.auto_keypad_lock = int(element.value)
+                _mem.auto_keypad_lock = element.value
 
             # Power on display mode
             elif elname == "welcome_mode":
-                _mem.power_on_dispmode = int(element.value)
+                _mem.power_on_dispmode = element.value
 
             # Keypad Tone
             elif elname == "voice":
-                _mem.voice = int(element.value)
+                _mem.voice = element.value
 
             elif elname == "s0_level":
-                _mem.s0_level = -int(element.value)
+                _mem.s0_level = element.value * -1
 
             elif elname == "s9_level":
-                _mem.s9_level = -int(element.value)
+                _mem.s9_level = element.value * -1
 
             elif elname == "password":
                 if element.value.get_value() is None or element.value == "":
                     _mem.password = 0xFFFFFFFF
                 else:
-                    _mem.password = int(element.value)
+                    _mem.password = element.value
 
             # Alarm mode
             elif elname == "alarm_mode":
-                _mem.alarm_mode = int(element.value)
+                _mem.alarm_mode = element.value
 
             # Reminding of end of talk
             elif elname == "roger_beep":
-                _mem.roger_beep = int(element.value)
+                _mem.roger_beep = element.value
 
             # Repeater tail tone elimination
             elif elname == "rp_ste":
-                _mem.rp_ste = int(element.value)
+                _mem.rp_ste = element.value
 
             # Logo string 1
             elif elname == "logo1":
-                bts = str(element.value).rstrip("\x20\xff\x00")+"\x00"*12
-                _mem.logo_line1 = bts[0:12]+"\x00\xff\xff\xff"
+                bts = str(element.value).rstrip("\x20\xff\x00")+"\x00" * 12
+                _mem.logo_line1 = bts[0:12] + "\x00\xff\xff\xff"
 
             # Logo string 2
             elif elname == "logo2":
-                bts = str(element.value).rstrip("\x20\xff\x00")+"\x00"*12
-                _mem.logo_line2 = bts[0:12]+"\x00\xff\xff\xff"
+                bts = str(element.value).rstrip("\x20\xff\x00")+"\x00" * 12
+                _mem.logo_line2 = bts[0:12] + "\x00\xff\xff\xff"
 
             # unlock settings
 
             # FLOCK
             elif elname == "int_flock":
-                _mem.int_flock = int(element.value)
+                _mem.int_flock = element.value
 
             # 350TX
             elif elname == "int_350tx":
-                _mem.int_350tx = int(element.value)
+                _mem.int_350tx = element.value
 
             # KILLED
             elif elname == "int_KILLED":
-                _mem.int_KILLED = int(element.value)
+                _mem.int_KILLED = element.value
 
             # 200TX
             elif elname == "int_200tx":
-                _mem.int_200tx = int(element.value)
+                _mem.int_200tx = element.value
 
             # 500TX
             elif elname == "int_500tx":
-                _mem.int_500tx = int(element.value)
+                _mem.int_500tx = element.value
 
             # 350EN
             elif elname == "int_350en":
-                _mem.int_350en = int(element.value)
+                _mem.int_350en = element.value
 
             # SCREN
             elif elname == "int_scren":
-                _mem.int_scren = int(element.value)
+                _mem.int_scren = element.value
 
             # battery type
             elif elname == "Battery_type":
-                _mem.Battery_type = int(element.value)
+                _mem.Battery_type = element.value
             # fm radio
             for i in range(1, 21):
-                freqname = "FM_" + str(i)
+                freqname = "FM_%i" % i
                 if elname == freqname:
                     val = str(element.value).strip()
                     try:
-                        val2 = int(float(val)*10)
+                        val2 = int(float(val) * 10)
                     except Exception:
                         val2 = 0xffff
 
-                    if val2 < FMMIN*10 or val2 > FMMAX*10:
+                    if val2 < FMMIN * 10 or val2 > FMMAX * 10:
                         val2 = 0xffff
 #                        raise errors.InvalidValueError(
 #                                "FM radio frequency should be a value "
@@ -780,90 +781,86 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # dtmf settings
             if elname == "dtmf_side_tone":
-                _mem.dtmf.side_tone = int(element.value)
+                _mem.dtmf.side_tone = element.value
 
             elif elname == "dtmf_separate_code":
-                _mem.dtmf.separate_code = str(element.value)
+                _mem.dtmf.separate_code = element.value
 
             elif elname == "dtmf_group_call_code":
                 _mem.dtmf.group_call_code = element.value
 
             elif elname == "dtmf_decode_response":
-                _mem.dtmf.decode_response = int(element.value)
+                _mem.dtmf.decode_response = element.value
 
             elif elname == "dtmf_auto_reset_time":
-                _mem.dtmf.auto_reset_time = int(element.value)
+                _mem.dtmf.auto_reset_time = element.value
 
             elif elname == "dtmf_preload_time":
-                _mem.dtmf.preload_time = int(int(element.value)/10)
+                _mem.dtmf.preload_time = element.value // 10
 
             elif elname == "dtmf_first_code_persist_time":
-                _mem.dtmf.first_code_persist_time = int(int(element.value)/10)
+                _mem.dtmf.first_code_persist_time = element.value // 10
 
             elif elname == "dtmf_hash_persist_time":
-                _mem.dtmf.hash_persist_time = int(int(element.value)/10)
+                _mem.dtmf.hash_persist_time = element.value // 10
 
             elif elname == "dtmf_code_persist_time":
-                _mem.dtmf.code_persist_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.code_persist_time = element.value // 10
 
             elif elname == "dtmf_code_interval_time":
-                _mem.dtmf.code_interval_time = \
-                        int(int(element.value)/10)
+                _mem.dtmf.code_interval_time = element.value // 10
 
             elif elname == "dtmf_permit_remote_kill":
-                _mem.dtmf.permit_remote_kill = \
-                        int(element.value)
+                _mem.dtmf.permit_remote_kill = element.value
 
             elif elname == "dtmf_dtmf_local_code":
-                k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*3
+                k = str(element.value).rstrip("\x20\xff\x00") + "\x00" * 3
                 _mem.dtmf.local_code = k[0:3]
 
             elif elname == "dtmf_dtmf_up_code":
-                k = str(element.value).strip("\x20\xff\x00") + "\x00"*16
+                k = str(element.value).strip("\x20\xff\x00") + "\x00" * 16
                 _mem.dtmf.up_code = k[0:16]
 
             elif elname == "dtmf_dtmf_down_code":
-                k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*16
+                k = str(element.value).rstrip("\x20\xff\x00") + "\x00" * 16
                 _mem.dtmf.down_code = k[0:16]
 
             elif elname == "dtmf_kill_code":
-                k = str(element.value).strip("\x20\xff\x00") + "\x00"*5
+                k = str(element.value).strip("\x20\xff\x00") + "\x00" * 5
                 _mem.dtmf.kill_code = k[0:5]
 
             elif elname == "dtmf_revive_code":
-                k = str(element.value).strip("\x20\xff\x00") + "\x00"*5
+                k = str(element.value).strip("\x20\xff\x00") + "\x00" * 5
                 _mem.dtmf.revive_code = k[0:5]
 
             elif elname == "live_DTMF_decoder":
-                _mem.live_DTMF_decoder = int(element.value)
+                _mem.live_DTMF_decoder = element.value
 
             # dtmf contacts
             for i in range(1, 17):
-                varname = "DTMF_" + str(i)
+                varname = "DTMF_%i" % i
                 if elname == varname:
-                    k = str(element.value).rstrip("\x20\xff\x00") + "\x00"*8
+                    k = str(element.value).rstrip("\x20\xff\x00") + "\x00" * 8
                     _mem.dtmfcontact[i-1].name = k[0:8]
 
-                varnumname = "DTMFNUM_" + str(i)
+                varnumname = "DTMFNUM_%i" % i
                 if elname == varnumname:
-                    k = str(element.value).rstrip("\x20\xff\x00") + "\xff"*3
+                    k = str(element.value).rstrip("\x20\xff\x00") + "\xff" * 3
                     _mem.dtmfcontact[i-1].number = k[0:3]
 
             # scanlist stuff
             if elname == "slDef":
-                _mem.slDef = int(element.value)
+                _mem.slDef = element.value
 
             elif elname == "sl1PriorEnab":
-                _mem.sl1PriorEnab = int(element.value)
+                _mem.sl1PriorEnab = element.value
 
             elif elname == "sl2PriorEnab":
-                _mem.sl2PriorEnab = int(element.value)
+                _mem.sl2PriorEnab = element.value
 
             elif elname in ["sl1PriorCh1", "sl1PriorCh2", "sl2PriorCh1",
                             "sl2PriorCh2"]:
                 val = int(element.value)
-
                 if val > 200 or val < 1:
                     val = 0xff
                 else:
@@ -872,22 +869,22 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
                 _mem[elname] = val
 
             if elname == "key1_shortpress_action":
-                _mem.key1_shortpress_action = int(element.value)
+                _mem.key1_shortpress_action = element.value
 
             elif elname == "key1_longpress_action":
-                _mem.key1_longpress_action = int(element.value)
+                _mem.key1_longpress_action = element.value
 
             elif elname == "key2_shortpress_action":
-                _mem.key2_shortpress_action = int(element.value)
+                _mem.key2_shortpress_action = element.value
 
             elif elname == "key2_longpress_action":
-                _mem.key2_longpress_action = int(element.value)
+                _mem.key2_longpress_action = element.value
 
             elif elname == "keyM_longpress_action":
-                _mem.keyM_longpress_action = int(element.value)
+                _mem.keyM_longpress_action = element.value
 
-            elif element.changed() and elname.startswith("_mem.cal."):
-                exec(elname + " = element.value.get_value()")
+            elif element.changed() and elname.startswith("cal."):
+                _mem.get_path(elname).set_value(element.value)
 
     def get_settings(self):
         _mem = self._memobj
@@ -923,7 +920,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             val = RadioSettingValueString(len(descr), len(descr), descr)
             val.set_mutable(False)
-            rs = RadioSetting("label" + str(append_label.idx), label, val)
+            rs = RadioSetting("label%s" % append_label.idx, label, val)
             append_label.idx += 1
             radio_setting.append(rs)
 
@@ -1023,7 +1020,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         val.set_charset(DTMF_CHARS_ID)
         ani_id_setting = \
             RadioSetting("dtmf_dtmf_local_code",
-                         "Local code (3 chars 0-9 ABCD) (ANI ID)", val)
+                         "Local code (ANI ID)", val)
+        ani_id_setting.set_doc('3 chars 0-9 ABCD')
 
         tmpval = str(_mem.dtmf.up_code).upper().strip(
                 "\x00\xff\x20")
@@ -1037,7 +1035,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         val.set_charset(DTMF_CHARS_UPDOWN)
         up_code_setting = \
             RadioSetting("dtmf_dtmf_up_code",
-                         "Up code (1-16 chars 0-9 ABCD*#) (UPCode)", val)
+                         "Up code", val)
+        up_code_setting.set_doc('1-16 chars 0-9 ABCD*#')
 
         tmpval = str(_mem.dtmf.down_code).upper().strip(
                 "\x00\xff\x20")
@@ -1051,7 +1050,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         val.set_charset(DTMF_CHARS_UPDOWN)
         dw_code_setting = \
             RadioSetting("dtmf_dtmf_down_code",
-                         "Down code (1-16 chars 0-9 ABCD*#) (DWCode)", val)
+                         "Down code", val)
+        dw_code_setting.set_doc('1-16 chars 0-9 ABCD*#')
 
         val = RadioSettingValueBoolean(_mem.dtmf.side_tone)
         dtmf_side_tone_setting = \
@@ -1098,7 +1098,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         val = RadioSettingValueString(5, 5, tmpval)
         val.set_charset(DTMF_CHARS_KILL)
         kill_code_setting = RadioSetting("dtmf_kill_code",
-                                         "Kill code (5 chars 0-9 ABCD)", val)
+                                         "Kill code", val)
+        kill_code_setting.set_doc('5 chars 0-9 ABCD')
 
         tmpval = str(_mem.dtmf.revive_code).upper().strip(
                 "\x00\xff\x20")
@@ -1113,7 +1114,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         val = RadioSettingValueString(5, 5, tmpval)
         val.set_charset(DTMF_CHARS_KILL)
         rev_code_setting = RadioSetting("dtmf_revive_code",
-                                        "Revive code (5 chars 0-9 ABCD)", val)
+                                        "Revive code", val)
+        rev_code_setting.set_doc('5 chars 0-9 ABCD')
 
         val = RadioSettingValueBoolean(_mem.int_KILLED)
         killed_setting = RadioSetting("int_KILLED", "DTMF kill lock", val)
@@ -1136,6 +1138,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
             val = RadioSettingValueString(0, 3, cntnum)
             val.set_charset(DTMF_CHARS)
             rs = RadioSetting(varnumname, varinumdescr, val)
+            rs.set_doc("DTMF Contacts are 3 codes (valid: 0-9 * # ABCD), "
+                       "or an empty string")
             dtmfc.append(rs)
 
         # ----------------- Scan Lists
@@ -1151,7 +1155,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
         ch_list = ["None"]
         for ch in range(1, 201):
-            ch_list.append("Channel M" + str(ch))
+            ch_list.append("Channel M%i" % ch)
 
         tmpch = list_def(_mem.sl1PriorCh1 + 1, ch_list, 0)
         val = RadioSettingValueList(ch_list, None, tmpch)
@@ -1181,12 +1185,12 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
         ch_list = []
         for ch in range(1, 201):
-            ch_list.append("Channel M" + str(ch))
+            ch_list.append("Channel M%i" % ch)
         for bnd in range(1, 8):
-            ch_list.append("Band F" + str(bnd))
+            ch_list.append("Band F%i" % bnd)
         if _mem.BUILD_OPTIONS.ENABLE_NOAA:
             for bnd in range(1, 11):
-                ch_list.append("NOAA N" + str(bnd))
+                ch_list.append("NOAA N%i" % bnd)
 
         tmpfreq0 = list_def(_mem.ScreenChannel_A, ch_list, 0)
         val = RadioSettingValueList(ch_list, None, tmpfreq0)
@@ -1208,7 +1212,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
         ch_list = []
         for ch in range(1, 201):
-            ch_list.append("Channel M" + str(ch))
+            ch_list.append("Channel M%i" % ch)
 
         tmpc = list_def(_mem.call_channel, ch_list, 0)
         val = RadioSettingValueList(ch_list, None, tmpc)
@@ -1391,13 +1395,14 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         # ----------------- FM radio
 
         for i in range(1, 21):
-            fmfreq = _mem.fmfreq[i-1]/10.0
+            fmfreq = _mem.fmfreq[i-1] / 10.0
             freq_name = str(fmfreq)
             if fmfreq < FMMIN or fmfreq > FMMAX:
                 freq_name = ""
-            rs = RadioSetting("FM_" + str(i), "Ch " + str(i),
+            rs = RadioSetting("FM_%i" % i, "Ch %i" % i,
                               RadioSettingValueString(0, 5, freq_name))
             fmradio.append(rs)
+            rs.set_doc('Frequency in MHz')
 
         # ----------------- Unlock settings
 
@@ -1405,7 +1410,7 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         def validate_int_flock(value):
             mem_val = self._memobj.int_flock
             if mem_val != 7 and value == FLOCK_LIST[7]:
-                msg = "\"" + value + "\" can only be enabled from radio menu"
+                msg = "%r can only be enabled from radio menu" % value
                 raise InvalidValueError(msg)
             return value
 
@@ -1464,50 +1469,48 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         bands = {"sqlBand1_3": "Frequency Band 1-3",
                  "sqlBand4_7": "Frequency Band 4-7"}
         for bnd, bndn in bands.items():
-            band_group_range = RadioSettingGroup(bnd, bndn)
+            band_group_range = RadioSettingSubGroup(bnd, bndn)
             radio_setting_group.append(band_group_range)
             for sql in range(0, 10):
-                band_group = RadioSettingGroup('%s_%i' % (bnd, sql),
-                                               "%s Squelch %i" % (bndn, sql))
+                band_group = RadioSettingSubGroup(
+                    '%s_%i' % (bnd, sql),
+                    "Squelch %i" % sql)
                 band_group_range.append(band_group)
 
-                prefix = "_mem.cal.%s." % bnd
-                postfix = "[%s]" % sql
-
-                name = prefix + "openRssiThr" + postfix
-                tempval = min_max_def(eval(name), 0, 255, 0)
+                name = 'cal.%s.openRssiThr[%i]' % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "RSSI threshold open", val)
                 band_group.append(radio_setting)
 
-                name = prefix + "closeRssiThr" + postfix
-                tempval = min_max_def(eval(name), 0, 255, 0)
+                name = 'cal.%s.closeRssiThr[%i]' % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "RSSI threshold close", val)
                 band_group.append(radio_setting)
 
-                name = prefix + "openNoiseThr" + postfix
-                tempval = min_max_def(eval(name), 0, 127, 0)
+                name = "cal.%s.openNoiseThr[%i]" % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 127, 0)
                 val = RadioSettingValueInteger(0, 127, tempval)
                 radio_setting = RadioSetting(name, "Noise threshold open", val)
                 band_group.append(radio_setting)
 
-                name = prefix + "closeNoiseThr" + postfix
-                tempval = min_max_def(eval(name), 0, 127, 0)
+                name = "cal.%s.closeNoiseThr[%i]" % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 127, 0)
                 val = RadioSettingValueInteger(0, 127, tempval)
                 radio_setting = RadioSetting(name, "Noise threshold close",
                                              val)
                 band_group.append(radio_setting)
 
-                name = prefix + "openGlitchThr" + postfix
-                tempval = min_max_def(eval(name), 0, 255, 0)
+                name = "cal.%s.openGlitchThr[%i]" % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "Glitch threshold open",
                                              val)
                 band_group.append(radio_setting)
 
-                name = prefix + "closeGlitchThr" + postfix
-                tempval = min_max_def(eval(name), 0, 255, 0)
+                name = "cal.%s.closeGlitchThr[%i]" % (bnd, sql)
+                tempval = min_max_def(_mem.get_path(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "Glitch threshold close",
                                              val)
@@ -1521,14 +1524,15 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
         bands = {"rssiLevelsBands1_2": "1-2 ", "rssiLevelsBands3_7": "3-7 "}
         for bnd, bndn in bands.items():
-            band_group = RadioSettingGroup(bnd, 'Frequency Band %s' % bndn)
+            band_group = RadioSettingSubGroup(bnd, 'Frequency Band %s' % bndn)
             radio_setting_group.append(band_group)
 
             for lvl in [1, 2, 4, 6]:
-                name = "_mem.cal." + bnd + ".level" + str(lvl)
-                tempval = min_max_def(eval(name), 0, 65535, 0)
+                name = "cal.%s.level%i" % (bnd, lvl)
+                value = int(_mem.get_path(name))
+                tempval = min_max_def(value, 0, 65535, 0)
                 val = RadioSettingValueInteger(0, 65535, tempval)
-                radio_setting = RadioSetting(name, "Level " + str(lvl), val)
+                radio_setting = RadioSetting(name, "Level %i" % lvl, val)
                 band_group.append(radio_setting)
 
 #
@@ -1538,18 +1542,21 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         calibration.append(radio_setting_group)
 
         for bnd in range(0, 7):
-            band_group = RadioSettingGroup('txpower_band_%i' % bnd,
-                                           'TX Power Band %i' % (bnd + 1))
+            band_group = RadioSettingSubGroup('txpower_band_%i' % bnd,
+                                              'Band %i' % (bnd + 1))
             powers = {"low": "Low", "mid": "Medium", "hi": "High"}
+            radio_setting_group.append(band_group)
             for pwr, pwrn in powers.items():
                 bounds = ["lower", "center", "upper"]
+                subgroup = RadioSettingSubGroup('txpower_band_%i_%s' % (
+                    bnd, pwr), pwrn)
+                band_group.append(subgroup)
                 for bound in bounds:
-                    name = f"_mem.cal.txp[{bnd}].{pwr}.{bound}"
-                    tempval = min_max_def(eval(name), 0, 255, 0)
+                    name = f"cal.txp[{bnd}].{pwr}.{bound}"
+                    tempval = min_max_def(_mem.get_path(name), 0, 255, 0)
                     val = RadioSettingValueInteger(0, 255, tempval)
-                    label = '%s %s' % (pwrn, bound.capitalize())
-                    radio_setting = RadioSetting(name, label, val)
-                    radio_setting_group.append(radio_setting)
+                    radio_setting = RadioSetting(name, bound.capitalize(), val)
+                    subgroup.append(radio_setting)
 
 #
 
@@ -1558,26 +1565,26 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         calibration.append(radio_setting_group)
 
         for lvl in range(0, 6):
-            name = "_mem.cal.batLvl[" + str(lvl) + "]"
-            temp_val = min_max_def(eval(name), 0, 4999, 4999)
+            name = "cal.batLvl[%i]" % lvl
+            temp_val = min_max_def(_mem.get_path(name), 0, 4999, 4999)
             val = RadioSettingValueInteger(0, 4999, temp_val)
-            radio_setting = \
-                RadioSetting(name, "Level " + str(lvl) +
-                             (" (voltage calibration)" if lvl == 3 else ""),
-                             val)
+            label = 'Level %i%s' % (
+                lvl,
+                " (voltage calibration)" if lvl == 3 else "")
+            radio_setting = RadioSetting(name, label, val)
             radio_setting_group.append(radio_setting)
 
         radio_setting_group = RadioSettingGroup("vox_calibration", "VOX")
         calibration.append(radio_setting_group)
 
         for lvl in range(0, 10):
-            name = "_mem.cal.vox1Thr[" + str(lvl) + "]"
-            val = RadioSettingValueInteger(0, 65535, eval(name))
+            name = "cal.vox1Thr[%s]" % lvl
+            val = RadioSettingValueInteger(0, 65535, _mem.get_path(name))
             radio_setting = RadioSetting(name, "Level %i On" % (lvl + 1), val)
             radio_setting_group.append(radio_setting)
 
-            name = "_mem.cal.vox0Thr[" + str(lvl) + "]"
-            val = RadioSettingValueInteger(0, 65535, eval(name))
+            name = "cal.vox0Thr[%s]" % lvl
+            val = RadioSettingValueInteger(0, 65535, _mem.get_path(name))
             radio_setting = RadioSetting(name, "Level %i Off" % (lvl + 1), val)
             radio_setting_group.append(radio_setting)
 
@@ -1586,29 +1593,29 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         calibration.append(radio_setting_group)
 
         for lvl in range(0, 5):
-            name = "_mem.cal.micLevel[" + str(lvl) + "]"
-            tempval = min_max_def(eval(name), 0, 31, 31)
+            name = "cal.micLevel[%s]" % lvl
+            tempval = min_max_def(_mem.get_path(name), 0, 31, 31)
             val = RadioSettingValueInteger(0, 31, tempval)
-            radio_setting = RadioSetting(name, "Level " + str(lvl), val)
+            radio_setting = RadioSetting(name, "Level %i" % lvl, val)
             radio_setting_group.append(radio_setting)
 
         radio_setting_group = RadioSettingGroup("other_calibration", "Other")
         calibration.append(radio_setting_group)
 
-        name = "_mem.cal.xtalFreqLow"
-        temp_val = min_max_def(eval(name), -1000, 1000, 0)
+        name = "cal.xtalFreqLow"
+        temp_val = min_max_def(_mem.get_path(name), -1000, 1000, 0)
         val = RadioSettingValueInteger(-1000, 1000, temp_val)
-        radio_setting = RadioSetting(name, "Xtal frequecy low", val)
+        radio_setting = RadioSetting(name, "Xtal frequency low", val)
         radio_setting_group.append(radio_setting)
 
-        name = "_mem.cal.volumeGain"
-        temp_val = min_max_def(eval(name), 0, 63, 58)
+        name = "cal.volumeGain"
+        temp_val = min_max_def(_mem.get_path(name), 0, 63, 58)
         val = RadioSettingValueInteger(0, 63, temp_val)
         radio_setting = RadioSetting(name, "Volume gain", val)
         radio_setting_group.append(radio_setting)
 
-        name = "_mem.cal.dacGain"
-        temp_val = min_max_def(eval(name), 0, 15, 8)
+        name = "cal.dacGain"
+        temp_val = min_max_def(_mem.get_path(name), 0, 15, 8)
         val = RadioSettingValueInteger(0, 15, temp_val)
         radio_setting = RadioSetting(name, "DAC gain", val)
         radio_setting_group.append(radio_setting)
@@ -1627,34 +1634,43 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
         if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
             basic.append(am_fix_setting)
 
-        basic.append(bat_txt_setting)
-        basic.append(mic_bar_setting)
-        basic.append(ch_disp_setting)
-        basic.append(p_on_msg_setting)
-        basic.append(logo1_setting)
-        basic.append(logo2_setting)
+        dispSubGrp = RadioSettingSubGroup("dispSubGrp", "Display settings")
+        basic.append(dispSubGrp)
+        dispSubGrp.append(bat_txt_setting)
+        dispSubGrp.append(mic_bar_setting)
+        dispSubGrp.append(ch_disp_setting)
+        dispSubGrp.append(p_on_msg_setting)
+        dispSubGrp.append(logo1_setting)
+        dispSubGrp.append(logo2_setting)
 
-        basic.append(back_lt_setting)
-        basic.append(bl_min_setting)
-        basic.append(bl_max_setting)
-        basic.append(blt_trx_setting)
+        bcklSubGrp = RadioSettingSubGroup("bcklSubGrp", "Backlight settings")
+        basic.append(bcklSubGrp)
+        bcklSubGrp.append(back_lt_setting)
+        bcklSubGrp.append(bl_min_setting)
+        bcklSubGrp.append(bl_max_setting)
+        bcklSubGrp.append(blt_trx_setting)
 
+        audioSubGrp = RadioSettingSubGroup("audioSubGrp",
+                                           "Audio related settings")
+        basic.append(audioSubGrp)
         if _mem.BUILD_OPTIONS.ENABLE_VOX:
-            basic.append(vox_setting)
-        basic.append(mic_gain_setting)
-        basic.append(beep_setting)
-        basic.append(roger_setting)
-        basic.append(ste_setting)
-        basic.append(rp_ste_setting)
+            audioSubGrp.append(vox_setting)
+        audioSubGrp.append(mic_gain_setting)
+        audioSubGrp.append(beep_setting)
+        audioSubGrp.append(roger_setting)
+        audioSubGrp.append(ste_setting)
+        audioSubGrp.append(rp_ste_setting)
         if _mem.BUILD_OPTIONS.ENABLE_VOICE:
-            basic.append(voice_setting)
+            audioSubGrp.append(voice_setting)
         if _mem.BUILD_OPTIONS.ENABLE_ALARM:
-            basic.append(alarm_setting)
+            audioSubGrp.append(alarm_setting)
 
-        basic.append(freq0_setting)
-        basic.append(freq1_setting)
-        basic.append(tx_vfo_setting)
-        basic.append(keypad_cock_setting)
+        stateSubGrp = RadioSettingSubGroup("stateSubGrp", "Radio state")
+        basic.append(stateSubGrp)
+        stateSubGrp.append(freq0_setting)
+        stateSubGrp.append(freq1_setting)
+        stateSubGrp.append(tx_vfo_setting)
+        stateSubGrp.append(keypad_cock_setting)
 
         advanced.append(freq_mode_allowed_setting)
         advanced.append(bat_type_setting)
