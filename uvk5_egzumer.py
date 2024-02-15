@@ -3,15 +3,6 @@
 #
 # based on template.py Copyright 2012 Dan Smith <dsmith@danplanet.com>
 #
-#
-# This is a preliminary version of a driver for the UV-K5
-# It is based on my reverse engineering effort described here:
-# https://github.com/sq5bpf/uvk5-reverse-engineering
-#
-# Warning: this driver is experimental, it may brick your radio,
-# eat your lunch and mess up your configuration.
-#
-#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 2 of the License, or
@@ -26,30 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import struct
 import logging
-import wx
 
-from chirp import chirp_common, directory, bitwise, memmap, errors, util
+from chirp import chirp_common, directory, bitwise
+from chirp.drivers import uvk5
 from chirp.settings import RadioSetting, RadioSettingGroup, \
     RadioSettingValueBoolean, RadioSettingValueList, \
     RadioSettingValueInteger, RadioSettingValueString, \
     RadioSettings, InvalidValueError
 
 LOG = logging.getLogger(__name__)
-
-# Show the obfuscated version of commands. Not needed normally, but
-# might be useful for someone who is debugging a similar radio
-DEBUG_SHOW_OBFUSCATED_COMMANDS = False
-
-# Show the memory being written/received. Not needed normally, because
-# this is the same information as in the packet hexdumps, but
-# might be useful for someone debugging some obscure memory issue
-DEBUG_SHOW_MEMORY_ACTIONS = False
-
-# TODO: remove the driver version when it's in mainline chirp
-DRIVER_VERSION = "Quansheng UV-K5/K6/5R driver (c) egzumer"
-VALEUR_COMPILER = "ENABLE"
 
 MEM_FORMAT = """
 //#seekto 0x0000;
@@ -67,11 +44,11 @@ struct {
 
 // 0x0B
   u8 modulation:4,
-  offsetDir:4;
+  shift:4;
 
 // 0x0C
   u8 __UNUSED1:3,
-  busyChLockout:1,
+  bclo:1,
   txpower:2,
   bandwidth:1,
   freq_reverse:1;
@@ -94,7 +71,7 @@ is_scanlist2:1,
 compander:2,
 is_free:1,
 band:3;
-} ch_attr[207];
+} channel_attributes[207];
 
 #seekto 0xe40;
 ul16 fmfreq[20];
@@ -332,18 +309,6 @@ u8 __UNUSED:3,
 """
 
 
-# flags1
-FLAGS1_OFFSET_NONE = 0b00
-FLAGS1_OFFSET_MINUS = 0b10
-FLAGS1_OFFSET_PLUS = 0b01
-
-POWER_HIGH = 0b10
-POWER_MEDIUM = 0b01
-POWER_LOW = 0b00
-
-# dtmf_flags
-PTTID_LIST = ["Off", "Up code", "Down code", "Up+Down code", "Apollo Quindar"]
-
 # power
 UVK5_POWER_LEVELS = [chirp_common.PowerLevel("Low",  watts=1.50),
                      chirp_common.PowerLevel("Med",  watts=3.00),
@@ -382,42 +347,6 @@ BACKLIGHT_LVL_LIST = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
 # Backlight _TX_RX_LIST
 BACKLIGHT_TX_RX_LIST = ["Off", "TX", "RX", "TX/RX"]
 
-# steps TODO: change order
-STEPS = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 1.25,
-         9, 15, 20, 30, 50, 100, 125, 200, 250, 500]
-
-# ctcss/dcs codes
-TMODES = ["", "Tone", "DTCS", "DTCS"]
-TONE_NONE = 0
-TONE_CTCSS = 1
-TONE_DCS = 2
-TONE_RDCS = 3
-
-
-CTCSS_TONES = [
-    67.0, 69.3, 71.9, 74.4, 77.0, 79.7, 82.5, 85.4,
-    88.5, 91.5, 94.8, 97.4, 100.0, 103.5, 107.2, 110.9,
-    114.8, 118.8, 123.0, 127.3, 131.8, 136.5, 141.3, 146.2,
-    151.4, 156.7, 159.8, 162.2, 165.5, 167.9, 171.3, 173.8,
-    177.3, 179.9, 183.5, 186.2, 189.9, 192.8, 196.6, 199.5,
-    203.5, 206.5, 210.7, 218.1, 225.7, 229.1, 233.6, 241.8,
-    250.3, 254.1
-]
-
-# lifted from ft4.py
-DTCS_CODES = [  # TODO: add negative codes
-    23,  25,  26,  31,  32,  36,  43,  47,  51,  53,  54,
-    65,  71,  72,  73,  74,  114, 115, 116, 122, 125, 131,
-    132, 134, 143, 145, 152, 155, 156, 162, 165, 172, 174,
-    205, 212, 223, 225, 226, 243, 244, 245, 246, 251, 252,
-    255, 261, 263, 265, 266, 271, 274, 306, 311, 315, 325,
-    331, 332, 343, 346, 351, 356, 364, 365, 371, 411, 412,
-    413, 423, 431, 432, 445, 446, 452, 454, 455, 462, 464,
-    465, 466, 503, 506, 516, 523, 526, 532, 546, 565, 606,
-    612, 624, 627, 631, 632, 654, 662, 664, 703, 712, 723,
-    731, 732, 734, 743, 754
-]
-
 # flock list extended
 FLOCK_LIST = ["Default+ (137-174, 400-470 + Tx200, Tx350, Tx500)",
               "FCC HAM (144-148, 420-450)",
@@ -441,11 +370,6 @@ ROGER_LIST = ["Off", "Roger beep", "MDC data burst"]
 RTE_LIST = ["Off", "100ms", "200ms", "300ms", "400ms",
             "500ms", "600ms", "700ms", "800ms", "900ms", "1000ms"]
 VOX_LIST = ["Off", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]
-
-MEM_SIZE = 0x2000  # size of all memory
-PROG_SIZE = 0x1d00  # size of the memory that we will write
-MEM_BLOCK = 0x80  # largest block of memory that we can reliably write
-CAL_START = 0x1E00  # calibration memory start address
 
 # fm radio supported frequencies
 FMMIN = 76.0
@@ -472,7 +396,6 @@ BANDS_WIDE = {
         6: [470.0, 1300.0]
         }
 
-SCANLIST_LIST = ["None", "List1", "List2", "Both"]
 SCANLIST_SELECT_LIST = ["List 1", "List 2", "All channels"]
 
 DTMF_CHARS = "0123456789ABCD*# "
@@ -501,251 +424,6 @@ KEYACTIONS_LIST = ["None",
 MIC_GAIN_LIST = ["+1.1dB", "+4.0dB", "+8.0dB", "+12.0dB", "+15.1dB"]
 
 
-def xorarr(data: bytes):
-    """the communication is obfuscated using this fine mechanism"""
-    tbl = [22, 108, 20, 230, 46, 145, 13, 64, 33, 53, 213, 64, 19, 3, 233, 128]
-    ret = b""
-    idx = 0
-    for byte in data:
-        ret += bytes([byte ^ tbl[idx]])
-        idx = (idx+1) % len(tbl)
-    return ret
-
-
-def calculate_crc16_xmodem(data: bytes):
-    """
-    if this crc was used for communication to AND from the radio, then it
-    would be a measure to increase reliability.
-    but it's only used towards the radio, so it's for further obfuscation
-    """
-    poly = 0x1021
-    crc = 0x0
-    for byte in data:
-        crc = crc ^ (byte << 8)
-        for _ in range(8):
-            crc = crc << 1
-            if crc & 0x10000:
-                crc = (crc ^ poly) & 0xFFFF
-    return crc & 0xFFFF
-
-
-def _send_command(serport, data: bytes):
-    """Send a command to UV-K5 radio"""
-    LOG.debug("Sending command (unobfuscated) len=0x%4.4x:\n%s",
-              len(data), util.hexprint(data))
-
-    crc = calculate_crc16_xmodem(data)
-    data2 = data + struct.pack("<H", crc)
-
-    command = struct.pack(">HBB", 0xabcd, len(data), 0) + \
-        xorarr(data2) + \
-        struct.pack(">H", 0xdcba)
-    if DEBUG_SHOW_OBFUSCATED_COMMANDS:
-        LOG.debug("Sending command (obfuscated):\n%s", util.hexprint(command))
-    try:
-        result = serport.write(command)
-    except Exception as e:
-        raise errors.RadioError("Error writing data to radio") from e
-    return result
-
-
-def _receive_reply(serport):
-    header = serport.read(4)
-    if len(header) != 4:
-        LOG.warning("Header short read: [%s] len=%i",
-                    util.hexprint(header), len(header))
-        raise errors.RadioError("Header short read")
-    if header[0] != 0xAB or header[1] != 0xCD or header[3] != 0x00:
-        LOG.warning("Bad response header: %s len=%i",
-                    util.hexprint(header), len(header))
-        raise errors.RadioError("Bad response header")
-
-    cmd = serport.read(int(header[2]))
-    if len(cmd) != int(header[2]):
-        LOG.warning("Body short read: [%s] len=%i",
-                    util.hexprint(cmd), len(cmd))
-        raise errors.RadioError("Command body short read")
-
-    footer = serport.read(4)
-
-    if len(footer) != 4:
-        LOG.warning("Footer short read: [%s] len=%i",
-                    util.hexprint(footer), len(footer))
-        raise errors.RadioError("Footer short read")
-
-    if footer[2] != 0xDC or footer[3] != 0xBA:
-        LOG.debug("Reply before bad response footer (obfuscated)"
-                  "len=0x%4.4x:\n%s", len(cmd), util.hexprint(cmd))
-        LOG.warning("Bad response footer: %s len=%i",
-                    util.hexprint(footer), len(footer))
-        raise errors.RadioError("Bad response footer")
-
-    if DEBUG_SHOW_OBFUSCATED_COMMANDS:
-        LOG.debug("Received reply (obfuscated) len=0x%4.4x:\n%s",
-                  len(cmd), util.hexprint(cmd))
-
-    cmd2 = xorarr(cmd)
-
-    LOG.debug("Received reply (unobfuscated) len=0x%4.4x:\n%s",
-              len(cmd2), util.hexprint(cmd2))
-
-    return cmd2
-
-
-def _getstring(data: bytes, begin, maxlen):
-    tmplen = min(maxlen+1, len(data))
-    ss = [data[i] for i in range(begin, tmplen)]
-    key = 0
-    for key, val in enumerate(ss):
-        if val < ord(' ') or val > ord('~'):
-            return ''.join(chr(x) for x in ss[0:key])
-    return ''
-
-
-def _sayhello(serport):
-    hellopacket = b"\x14\x05\x04\x00\x6a\x39\x57\x64"
-
-    tries = 5
-    while True:
-        LOG.debug("Sending hello packet")
-        _send_command(serport, hellopacket)
-        rep = _receive_reply(serport)
-        if rep:
-            break
-        tries -= 1
-        if tries == 0:
-            LOG.warning("Failed to initialise radio")
-            raise errors.RadioError("Failed to initialize radio")
-    if rep.startswith(b'\x18\x05'):
-        raise errors.RadioError("Radio is in programming mode, "
-                                "restart radio into normal mode")
-    firmware = _getstring(rep, 4, 24)
-
-    LOG.info("Found firmware: %s", firmware)
-    return firmware
-
-
-def _readmem(serport, offset, length):
-    LOG.debug("Sending readmem offset=0x%4.4x len=0x%4.4x", offset, length)
-
-    readmem = b"\x1b\x05\x08\x00" + \
-        struct.pack("<HBB", offset, length, 0) + \
-        b"\x6a\x39\x57\x64"
-    _send_command(serport, readmem)
-    rep = _receive_reply(serport)
-    if DEBUG_SHOW_MEMORY_ACTIONS:
-        LOG.debug("readmem Received data len=0x%4.4x:\n%s",
-                  len(rep), util.hexprint(rep))
-    return rep[8:]
-
-
-def _writemem(serport, data, offset):
-    LOG.debug("Sending writemem offset=0x%4.4x len=0x%4.4x",
-              offset, len(data))
-
-    if DEBUG_SHOW_MEMORY_ACTIONS:
-        LOG.debug("writemem sent data offset=0x%4.4x len=0x%4.4x:\n%s",
-                  offset, len(data), util.hexprint(data))
-
-    dlen = len(data)
-    writemem = b"\x1d\x05" + \
-        struct.pack("<BBHBB", dlen+8, 0, offset, dlen, 1) + \
-        b"\x6a\x39\x57\x64"+data
-
-    _send_command(serport, writemem)
-    rep = _receive_reply(serport)
-
-    LOG.debug("writemem Received data: %s len=%i",
-              util.hexprint(rep), len(rep))
-
-    if (rep[0] == 0x1e and
-       rep[4] == (offset & 0xff) and
-       rep[5] == (offset >> 8) & 0xff):
-        return True
-
-    LOG.warning("Bad data from writemem")
-    raise errors.RadioError("Bad response to writemem")
-
-
-def _resetradio(serport):
-    resetpacket = b"\xdd\x05\x00\x00"
-    _send_command(serport, resetpacket)
-
-
-def do_download(radio):
-    """download eeprom from radio"""
-    serport = radio.pipe
-    serport.timeout = 0.5
-    status = chirp_common.Status()
-    status.cur = 0
-    status.max = MEM_SIZE
-    status.msg = "Downloading from radio"
-    radio.status_fn(status)
-
-    eeprom = b""
-    f = _sayhello(serport)
-    if f:
-        radio.FIRMWARE_VERSION = f
-    else:
-        raise errors.RadioError("Failed to initialize radio")
-
-    addr = 0
-    while addr < MEM_SIZE:
-        data = _readmem(serport, addr, MEM_BLOCK)
-        status.cur = addr
-        radio.status_fn(status)
-
-        if data and len(data) == MEM_BLOCK:
-            eeprom += data
-            addr += MEM_BLOCK
-        else:
-            raise errors.RadioError("Memory download incomplete")
-
-    return memmap.MemoryMapBytes(eeprom)
-
-
-def do_upload(radio):
-    """upload configuration to radio eeprom"""
-    serport = radio.pipe
-    serport.timeout = 0.5
-    status = chirp_common.Status()
-    status.cur = 0
-    status.msg = "Uploading to radio"
-
-    if radio.upload_calibration:
-        status.max = MEM_SIZE-CAL_START
-        start_addr = CAL_START
-        stop_addr = MEM_SIZE
-    else:
-        status.max = PROG_SIZE
-        start_addr = 0
-        stop_addr = PROG_SIZE
-
-    radio.status_fn(status)
-
-    f = _sayhello(serport)
-    if f:
-        radio.FIRMWARE_VERSION = f
-    else:
-        return False
-
-    addr = start_addr
-    while addr < stop_addr:
-        dat = radio.get_mmap()[addr:addr+MEM_BLOCK]
-        _writemem(serport, dat, addr)
-        status.cur = addr - start_addr
-        radio.status_fn(status)
-        if dat:
-            addr += MEM_BLOCK
-        else:
-            raise errors.RadioError("Memory upload incomplete")
-    status.msg = "Uploaded OK"
-
-    _resetradio(serport)
-
-    return True
-
-
 def min_max_def(value, min_val, max_val, default):
     """returns value if in bounds or default otherwise"""
     if min_val is not None and value < min_val:
@@ -765,15 +443,26 @@ def list_def(value, lst, default):
 
 
 @directory.register
-class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
+@directory.detected_by(uvk5.UVK5Radio)
+class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
     """Quansheng UV-K5 (egzumer)"""
     VENDOR = "Quansheng"
-    MODEL = "UV-K5 (egzumer)"
+    MODEL = "UV-K5"
+    VARIANT = "egzumer"
     BAUD_RATE = 38400
     NEEDS_COMPAT_SERIAL = False
     FIRMWARE_VERSION = ""
+    _cal_start = 0x1E00  # calibration memory start address
+    _pttid_list = ["Off", "Up code", "Down code", "Up+Down code",
+                   "Apollo Quindar"]
+    _steps = [2.5, 5, 6.25, 10, 12.5, 25, 8.33, 0.01, 0.05, 0.1, 0.25, 0.5, 1,
+              1.25, 9, 15, 20, 30, 50, 100, 125, 200, 250, 500]
 
     upload_calibration = False
+
+    @classmethod
+    def k5_approve_firmware(cls, firmware):
+        return firmware.startswith('EGZUMER ')
 
     def _get_bands(self):
         is_wide = self._memobj.BUILD_OPTIONS.ENABLE_WIDE_RX \
@@ -806,69 +495,13 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             specials[name] = 200 + idx
         return specials
 
-    @classmethod
-    def get_prompts(cls):
-        rp = chirp_common.RadioPrompts()
-        rp.experimental = \
-            'This is an experimental driver for the Quansheng UV-K5. ' \
-            'It may harm your radio, or worse. Use at your own risk.\n\n' \
-            'Before attempting to do any changes please download' \
-            'the memory image from the radio with chirp ' \
-            'and keep it. This can be later used to recover the ' \
-            'original settings. \n\n' \
-            'some details are not yet implemented'
-        rp.pre_download = \
-            "1. Turn radio on.\n" \
-            "2. Connect cable to mic/spkr connector.\n" \
-            "3. Make sure connector is firmly connected.\n" \
-            "4. Click OK to download image from device.\n\n" \
-            "It may not work if you turn on the radio " \
-            "with the cable already attached\n"
-        rp.pre_upload = \
-            "1. Turn radio on.\n" \
-            "2. Connect cable to mic/spkr connector.\n" \
-            "3. Make sure connector is firmly connected.\n" \
-            "4. Click OK to upload the image to device.\n\n" \
-            "It may not work if you turn on the radio " \
-            "with the cable already attached"
-        return rp
-
     # Return information about this radio's features, including
     # how many memories it has, what bands it supports, etc
     def get_features(self):
-        rf = chirp_common.RadioFeatures()
-        rf.has_bank = False
-        rf.valid_dtcs_codes = DTCS_CODES
-        rf.has_rx_dtcs = True
-        rf.has_ctone = True
-        rf.has_settings = True
-        rf.has_comment = False
-        rf.valid_name_length = 10
-        rf.valid_power_levels = UVK5_POWER_LEVELS
+        rf = super().get_features()
         rf.valid_special_chans = self._get_vfo_channel_names()
-        rf.valid_duplexes = ["", "-", "+", "off"]
-
-        steps = STEPS.copy()
-        steps.sort()
-        rf.valid_tuning_steps = steps
-
-        rf.valid_tmodes = ["", "Tone", "TSQL", "DTCS", "Cross"]
-        rf.valid_cross_modes = ["Tone->Tone", "Tone->DTCS", "DTCS->Tone",
-                                "->Tone", "->DTCS", "DTCS->", "DTCS->DTCS"]
-
-        rf.valid_characters = chirp_common.CHARSET_ASCII
         rf.valid_modes = ["FM", "NFM", "AM", "NAM", "USB"]
 
-        rf.valid_skips = [""]
-
-        # This radio supports memories 1-200, 201-214 are the VFO memories
-        rf.memory_bounds = (1, 200)
-
-        # This is what the BK4819 chip supports
-        # Will leave it in a comment, might be useful someday
-        # rf.valid_bands = [(18000000,  620000000),
-        #                  (840000000, 1300000000)
-        #                  ]
         rf.valid_bands = []
         bands = self._get_bands()
         for _, rng in bands.items():
@@ -876,305 +509,55 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
                     (int(rng[0]*1000000), int(rng[1]*1000000)))
         return rf
 
-    # Do a download of the radio from the serial port
-    def sync_in(self):
-        self._mmap = do_download(self)
-        self.process_mmap()
-
-    # Do an upload of the radio to the serial port
-    def sync_out(self):
-        do_upload(self)
-
     # Convert the raw byte array into a memory object structure
     def process_mmap(self):
         self._memobj = bitwise.parse(MEM_FORMAT, self._mmap)
 
-    # Return a raw representation of the memory object, which
-    # is very helpful for development
-    def get_raw_memory(self, number):
-        return repr(self._memobj.channel[number-1])
-
-    def validate_memory(self, mem):
-        msgs = super().validate_memory(mem)
-
-        if mem.duplex == 'off':
-            return msgs
-
-        # find tx frequency
-        if mem.duplex == '-':
-            txfreq = mem.freq - mem.offset
-        elif mem.duplex == '+':
-            txfreq = mem.freq + mem.offset
-        else:
-            txfreq = mem.freq
-
-        # find band
-        band = self._find_band(txfreq)
-        if band is False:
-            msg = f"Transmit frequency {txfreq/1000000.0:.4f}MHz " \
-                   "is not supported by this radio"
-            msgs.append(chirp_common.ValidationWarning(msg))
-
-        band = self._find_band(mem.freq)
-        if band is False:
-            msg = f"The frequency {mem.freq/1000000.0:%.4f}MHz " \
-                   "is not supported by this radio"
-            msgs.append(chirp_common.ValidationWarning(msg))
-
-        return msgs
-
-    def _set_tone(self, mem, _mem):
-        ((txmode, txtone, txpol),
-         (rxmode, rxtone, rxpol)) = chirp_common.split_tone_encode(mem)
-
-        if txmode == "Tone":
-            txtoval = CTCSS_TONES.index(txtone)
-            txmoval = 0b01
-        elif txmode == "DTCS":
-            txmoval = txpol == "R" and 0b11 or 0b10
-            txtoval = DTCS_CODES.index(txtone)
-        else:
-            txmoval = 0
-            txtoval = 0
-
-        if rxmode == "Tone":
-            rxtoval = CTCSS_TONES.index(rxtone)
-            rxmoval = 0b01
-        elif rxmode == "DTCS":
-            rxmoval = rxpol == "R" and 0b11 or 0b10
-            rxtoval = DTCS_CODES.index(rxtone)
-        else:
-            rxmoval = 0
-            rxtoval = 0
-
-        _mem.rxcodeflag = rxmoval
-        _mem.txcodeflag = txmoval
-        _mem.rxcode = rxtoval
-        _mem.txcode = txtoval
-
-    def _get_tone(self, mem, _mem):
-        rxtype = _mem.rxcodeflag
-        txtype = _mem.txcodeflag
-        rx_tmode = TMODES[rxtype]
-        tx_tmode = TMODES[txtype]
-
-        rx_tone = tx_tone = None
-
-        if tx_tmode == "Tone":
-            if _mem.txcode < len(CTCSS_TONES):
-                tx_tone = CTCSS_TONES[_mem.txcode]
-            else:
-                tx_tone = 0
-                tx_tmode = ""
-        elif tx_tmode == "DTCS":
-            if _mem.txcode < len(DTCS_CODES):
-                tx_tone = DTCS_CODES[_mem.txcode]
-            else:
-                tx_tone = 0
-                tx_tmode = ""
-
-        if rx_tmode == "Tone":
-            if _mem.rxcode < len(CTCSS_TONES):
-                rx_tone = CTCSS_TONES[_mem.rxcode]
-            else:
-                rx_tone = 0
-                rx_tmode = ""
-        elif rx_tmode == "DTCS":
-            if _mem.rxcode < len(DTCS_CODES):
-                rx_tone = DTCS_CODES[_mem.rxcode]
-            else:
-                rx_tone = 0
-                rx_tmode = ""
-
-        tx_pol = txtype == 0x03 and "R" or "N"
-        rx_pol = rxtype == 0x03 and "R" or "N"
-
-        chirp_common.split_tone_decode(mem, (tx_tmode, tx_tone, tx_pol),
-                                       (rx_tmode, rx_tone, rx_pol))
-
-    # Extract a high-level memory object from the low-level memory map
-    # This is called to populate a memory in the UI
-    def get_memory(self, number):
-
-        mem = chirp_common.Memory()
-
-        if isinstance(number, str):
-            ch_num = self._get_specials()[number]
-            mem.extd_number = number
-        else:
-            ch_num = number - 1
-
-        mem.number = ch_num + 1
-
-        _mem = self._memobj.channel[ch_num]
-
-        is_empty = False
-        # We'll consider any blank (i.e. 0MHz frequency) to be empty
-        if (_mem.freq == 0xffffffff) or (_mem.freq == 0):
-            is_empty = True
-
-        # We'll also look at the channel attributes if a memory has them
-        tmpscn = 0
-        tmp_comp = 0
-        if ch_num < 200:
-            _mem3 = self._memobj.ch_attr[ch_num]
-            # free memory bit
-            is_empty |= _mem3.is_free
-            # scanlists
-            tmpscn = _mem3.is_scanlist1 + _mem3.is_scanlist2 * 2
-            tmp_comp = list_def(_mem3.compander, COMPANDER_LIST, 0)
-        elif ch_num < 214:
-            att_num = 200 + int((ch_num - 200) / 2)
-            _mem3 = self._memobj.ch_attr[att_num]
-            is_empty |= _mem3.is_free
-            tmp_comp = list_def(_mem3.compander, COMPANDER_LIST, 0)
-
-        if is_empty:
-            mem.empty = True
-            # set some sane defaults:
-            mem.power = UVK5_POWER_LEVELS[2]
-            mem.extra = RadioSettingGroup("Extra", "extra")
-
-            val = RadioSettingValueBoolean(False)
-            rs = RadioSetting("busyChLockout", "BusyCL", val)
-            mem.extra.append(rs)
-
-            val = RadioSettingValueBoolean(False)
-            rs = RadioSetting("frev", "FreqRev", val)
-            mem.extra.append(rs)
-
-            val = RadioSettingValueList(PTTID_LIST)
-            rs = RadioSetting("pttid", "PTTID", val)
-            mem.extra.append(rs)
-
-            val = RadioSettingValueBoolean(False)
-            rs = RadioSetting("dtmfdecode", "DTMF decode", val)
-            if self._memobj.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
-                mem.extra.append(rs)
-
-            val = RadioSettingValueList(SCRAMBLER_LIST)
-            rs = RadioSetting("scrambler", "Scrambler", val)
-            mem.extra.append(rs)
-
-            val = RadioSettingValueList(COMPANDER_LIST)
-            rs = RadioSetting("compander", "Compander", val)
-            mem.extra.append(rs)
-
-            val = RadioSettingValueList(SCANLIST_LIST)
-            rs = RadioSetting("scanlists", "Scanlists", val)
-            mem.extra.append(rs)
-
-            # actually the step and duplex are overwritten by chirp based on
-            # bandplan. they are here to document sane defaults for IARU r1
-            # mem.tuning_step = 25.0
-            # mem.duplex = "off"
-
-            return mem
-
-        if ch_num > 199:
-            mem.name = self._get_vfo_channel_names()[ch_num-200]
-            mem.immutable = ["name", "scanlists"]
-        else:
-            _mem2 = self._memobj.channelname[ch_num]
-            for char in _mem2.name:
-                if str(char) == "\xFF" or str(char) == "\x00":
-                    break
-                mem.name += str(char)
-            mem.name = mem.name.rstrip()
-
-        # Convert your low-level frequency to Hertz
-        mem.freq = int(_mem.freq)*10
-        mem.offset = int(_mem.offset)*10
-
-        if mem.offset == 0:
-            mem.duplex = ''
-        else:
-            if _mem.offsetDir == FLAGS1_OFFSET_MINUS:
-                if _mem.freq == _mem.offset:
-                    # fake tx disable by setting tx to 0 MHz
-                    mem.duplex = 'off'
-                    mem.offset = 0
-                else:
-                    mem.duplex = '-'
-            elif _mem.offsetDir == FLAGS1_OFFSET_PLUS:
-                mem.duplex = '+'
-            else:
-                mem.duplex = ''
-
-        # tone data
-        self._get_tone(mem, _mem)
-
-        # mode
+    def _get_mem_mode(self, _mem):
         temp_modes = self.get_features().valid_modes
-        temp_modul = _mem.modulation*2 + _mem.bandwidth
+        temp_modul = _mem.modulation * 2 + _mem.bandwidth
         if temp_modul < len(temp_modes):
-            mem.mode = temp_modes[temp_modul]
+            return temp_modes[temp_modul]
         elif temp_modul == 5:  # USB with narrow setting
-            mem.mode = temp_modes[4]
+            return temp_modes[4]
         elif temp_modul >= len(temp_modes):
-            mem.mode = "UNSUPPORTED BY CHIRP"
+            LOG.error('Mode %i unsupported', temp_modul)
+            return "FM"
 
-        # tuning step
-        tstep = _mem.step
-        if tstep < len(STEPS):
-            mem.tuning_step = STEPS[tstep]
+    def get_memory(self, number):
+        mem = super().get_memory(number)
+        try:
+            number = self._get_specials()[number]
+        except KeyError:
+            number -= 1
+
+        if number < 200:
+            comp = list_def(self._memobj.channel_attributes[number].compander,
+                            COMPANDER_LIST, 0)
         else:
-            mem.tuning_step = 2.5
-
-        # power
-        if _mem.txpower == POWER_HIGH:
-            mem.power = UVK5_POWER_LEVELS[2]
-        elif _mem.txpower == POWER_MEDIUM:
-            mem.power = UVK5_POWER_LEVELS[1]
-        else:
-            mem.power = UVK5_POWER_LEVELS[0]
-
-        # We'll consider any blank (i.e. 0MHz frequency) to be empty
-        if (_mem.freq == 0xffffffff) or (_mem.freq == 0):
-            mem.empty = True
-        else:
-            mem.empty = False
-
-        mem.extra = RadioSettingGroup("Extra", "extra")
-
-        # BusyCL
-        val = RadioSettingValueBoolean(_mem.busyChLockout)
-        rs = RadioSetting("busyChLockout", "Busy Ch Lockout    (BusyCL)", val)
-        mem.extra.append(rs)
-
-        # Frequency reverse
-        val = RadioSettingValueBoolean(_mem.freq_reverse)
-        rs = RadioSetting("frev", "Reverse Frequencies (R)", val)
-        mem.extra.append(rs)
-
-        # PTTID
-        pttid = list_def(_mem.dtmf_pttid, PTTID_LIST, 0)
-        val = RadioSettingValueList(PTTID_LIST, None, pttid)
-        rs = RadioSetting("pttid", "PTT ID (PTT ID)", val)
-        mem.extra.append(rs)
-
-        # DTMF DECODE
-        val = RadioSettingValueBoolean(_mem.dtmf_decode)
-        rs = RadioSetting("dtmfdecode", "DTMF decode (D Decd)", val)
-        if self._memobj.BUILD_OPTIONS.ENABLE_DTMF_CALLING:
-            mem.extra.append(rs)
-
-        # Scrambler
-        enc = list_def(_mem.scrambler, SCRAMBLER_LIST, 0)
-        val = RadioSettingValueList(SCRAMBLER_LIST, None, enc)
-        rs = RadioSetting("scrambler", "Scrambler (Scramb)", val)
-        mem.extra.append(rs)
-
-        # Compander
-        val = RadioSettingValueList(COMPANDER_LIST, None, tmp_comp)
+            comp = 0
+        val = RadioSettingValueList(COMPANDER_LIST, None, comp)
         rs = RadioSetting("compander", "Compander (Compnd)", val)
         mem.extra.append(rs)
-
-        val = RadioSettingValueList(SCANLIST_LIST, None, tmpscn)
-        rs = RadioSetting("scanlists", "Scanlists (SList)", val)
-        mem.extra.append(rs)
-
         return mem
+
+    def _set_mem_mode(self, _mem, mode):
+        tmp_mode = self.get_features().valid_modes.index(mode)
+        _mem.modulation = tmp_mode / 2
+        _mem.bandwidth = tmp_mode % 2
+        if mode == "USB":
+            _mem.bandwidth = 1  # narrow
+
+    def set_memory(self, mem):
+        super().set_memory(mem)
+        try:
+            number = self._get_specials()[mem.number]
+        except KeyError:
+            number = mem.number - 1
+
+        if number < 200 and 'compander' in mem.extra:
+            self._memobj.channel_attributes[number].compander = (
+                COMPANDER_LIST.index(str(mem.extra['compander'].value)))
 
     def set_settings(self, settings):
         _mem = self._memobj
@@ -1737,11 +1120,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
         # ----------------- DTMF Contacts
 
-        append_label(dtmfc, "DTMF Contacts  (D List)",
-                     "All DTMF Contacts are 3 codes "
-                     "(valid: 0-9 * # ABCD), "
-                     "or an empty string")
-
         for i in range(1, 17):
             varname = "DTMF_"+str(i)
             varnumname = "DTMFNUM_"+str(i)
@@ -1881,14 +1259,14 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
                                         val)
 
         logo1 = str(_mem.logo_line1).strip("\x20\x00\xff") + "\x00"
-        logo1 = _getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
+        logo1 = uvk5._getstring(logo1.encode('ascii', errors='ignore'), 0, 12)
         val = RadioSettingValueString(0, 12, logo1)
         logo1_setting = RadioSetting("logo1",
                                      "Message line 1",
                                      val)
 
         logo2 = str(_mem.logo_line2).strip("\x20\x00\xff") + "\x00"
-        logo2 = _getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
+        logo2 = uvk5._getstring(logo2.encode('ascii', errors='ignore'), 0, 12)
         val = RadioSettingValueString(0, 12, logo2)
         logo2_setting = RadioSetting("logo2",
                                      "Message line 2",
@@ -2012,8 +1390,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
         # ----------------- FM radio
 
-        append_label(fmradio, "Channel", "Frequency [MHz]")
-
         for i in range(1, 21):
             fmfreq = _mem.fmfreq[i-1]/10.0
             freq_name = str(fmfreq)
@@ -2061,34 +1437,24 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
         # ----------------- Driver Info
 
-        if self.FIRMWARE_VERSION == "":
-            firmware = "To get the firmware version please download" \
-                       "the image from the radio first"
-        else:
-            firmware = self.FIRMWARE_VERSION
-
+        firmware = self.metadata.get('uvk5_firmware', 'UNKNOWN')
         append_label(roinfo, "Firmware Version", firmware)
-        append_label(roinfo, "Driver version", DRIVER_VERSION)
 
         # ----------------- Calibration
 
         val = RadioSettingValueBoolean(False)
 
-        def validate_upload_calibration(value):
-            if value and not self.upload_calibration:
-                msg = "This option may brake your radio!!!\n" \
-                    "You are doing this at your own risk.\n" \
-                    "Make sure you have a working calibration backup.\n" \
-                    "Don't use it unless you know what you're doing."
-                ret = wx.MessageBox(msg, "Warning", wx.OK | wx.CANCEL |
-                                    wx.CANCEL_DEFAULT | wx.ICON_WARNING)
-                value = ret == wx.OK
-            self.upload_calibration = value
-            return value
-
-        val.set_validate_callback(validate_upload_calibration)
         radio_setting = RadioSetting("upload_calibration",
                                      "Upload calibration", val)
+        radio_setting.set_warning(
+            _('This option may break your radio! '
+              'Each radio has a unique set of calibration data '
+              'and uploading the data from the image will cause '
+              'physical harm to the radio if it is from a '
+              'different piece of hardware. Do not use this '
+              'unless you know what you are doing and accept the '
+              'risk of destroying your radio!'),
+            safe_value=False)
         calibration.append(radio_setting)
 
         radio_setting_group = RadioSettingGroup("squelch_calibration",
@@ -2098,51 +1464,54 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         bands = {"sqlBand1_3": "Frequency Band 1-3",
                  "sqlBand4_7": "Frequency Band 4-7"}
         for bnd, bndn in bands.items():
-            append_label(radio_setting_group,
-                         "=" * 6 + " " + bndn + " " + "=" * 300, "=" * 300)
+            band_group_range = RadioSettingGroup(bnd, bndn)
+            radio_setting_group.append(band_group_range)
             for sql in range(0, 10):
-                prefix = "_mem.cal." + bnd + "."
-                postfix = "[" + str(sql) + "]"
-                append_label(radio_setting_group, "Squelch " + str(sql))
+                band_group = RadioSettingGroup('%s_%i' % (bnd, sql),
+                                               "%s Squelch %i" % (bndn, sql))
+                band_group_range.append(band_group)
+
+                prefix = "_mem.cal.%s." % bnd
+                postfix = "[%s]" % sql
 
                 name = prefix + "openRssiThr" + postfix
                 tempval = min_max_def(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "RSSI threshold open", val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
                 name = prefix + "closeRssiThr" + postfix
                 tempval = min_max_def(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "RSSI threshold close", val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
                 name = prefix + "openNoiseThr" + postfix
                 tempval = min_max_def(eval(name), 0, 127, 0)
                 val = RadioSettingValueInteger(0, 127, tempval)
                 radio_setting = RadioSetting(name, "Noise threshold open", val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
                 name = prefix + "closeNoiseThr" + postfix
                 tempval = min_max_def(eval(name), 0, 127, 0)
                 val = RadioSettingValueInteger(0, 127, tempval)
                 radio_setting = RadioSetting(name, "Noise threshold close",
                                              val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
                 name = prefix + "openGlitchThr" + postfix
                 tempval = min_max_def(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "Glitch threshold open",
                                              val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
                 name = prefix + "closeGlitchThr" + postfix
                 tempval = min_max_def(eval(name), 0, 255, 0)
                 val = RadioSettingValueInteger(0, 255, tempval)
                 radio_setting = RadioSetting(name, "Glitch threshold close",
                                              val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
 #
 
@@ -2152,16 +1521,15 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
 
         bands = {"rssiLevelsBands1_2": "1-2 ", "rssiLevelsBands3_7": "3-7 "}
         for bnd, bndn in bands.items():
-            append_label(radio_setting_group,
-                         "=" * 6 +
-                         " RSSI levels for QS original small bar graph, bands "
-                         + bndn + "=" * 300, "=" * 300)
+            band_group = RadioSettingGroup(bnd, 'Frequency Band %s' % bndn)
+            radio_setting_group.append(band_group)
+
             for lvl in [1, 2, 4, 6]:
                 name = "_mem.cal." + bnd + ".level" + str(lvl)
                 tempval = min_max_def(eval(name), 0, 65535, 0)
                 val = RadioSettingValueInteger(0, 65535, tempval)
                 radio_setting = RadioSetting(name, "Level " + str(lvl), val)
-                radio_setting_group.append(radio_setting)
+                band_group.append(radio_setting)
 
 #
 
@@ -2170,17 +1538,17 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         calibration.append(radio_setting_group)
 
         for bnd in range(0, 7):
-            append_label(radio_setting_group, "=" * 6 + " TX power band "
-                         + str(bnd+1) + " " + "=" * 300, "=" * 300)
+            band_group = RadioSettingGroup('txpower_band_%i' % bnd,
+                                           'TX Power Band %i' % (bnd + 1))
             powers = {"low": "Low", "mid": "Medium", "hi": "High"}
             for pwr, pwrn in powers.items():
-                append_label(radio_setting_group, pwrn)
                 bounds = ["lower", "center", "upper"]
                 for bound in bounds:
                     name = f"_mem.cal.txp[{bnd}].{pwr}.{bound}"
                     tempval = min_max_def(eval(name), 0, 255, 0)
                     val = RadioSettingValueInteger(0, 255, tempval)
-                    radio_setting = RadioSetting(name, bound.capitalize(), val)
+                    label = '%s %s' % (pwrn, bound.capitalize())
+                    radio_setting = RadioSetting(name, label, val)
                     radio_setting_group.append(radio_setting)
 
 #
@@ -2203,16 +1571,14 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         calibration.append(radio_setting_group)
 
         for lvl in range(0, 10):
-            append_label(radio_setting_group, "Level " + str(lvl + 1))
-
             name = "_mem.cal.vox1Thr[" + str(lvl) + "]"
             val = RadioSettingValueInteger(0, 65535, eval(name))
-            radio_setting = RadioSetting(name, "On", val)
+            radio_setting = RadioSetting(name, "Level %i On" % (lvl + 1), val)
             radio_setting_group.append(radio_setting)
 
             name = "_mem.cal.vox0Thr[" + str(lvl) + "]"
             val = RadioSettingValueInteger(0, 65535, eval(name))
-            radio_setting = RadioSetting(name, "Off", val)
+            radio_setting = RadioSetting(name, "Level %i Off" % (lvl + 1), val)
             radio_setting_group.append(radio_setting)
 
         radio_setting_group = RadioSettingGroup("mic_calibration",
@@ -2261,9 +1627,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         if _mem.BUILD_OPTIONS.ENABLE_AM_FIX:
             basic.append(am_fix_setting)
 
-        append_label(basic,
-                     "=" * 6 + " Display settings " + "=" * 300, "=" * 300)
-
         basic.append(bat_txt_setting)
         basic.append(mic_bar_setting)
         basic.append(ch_disp_setting)
@@ -2271,16 +1634,10 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         basic.append(logo1_setting)
         basic.append(logo2_setting)
 
-        append_label(basic, "=" * 6 + " Backlight settings "
-                     + "=" * 300, "=" * 300)
-
         basic.append(back_lt_setting)
         basic.append(bl_min_setting)
         basic.append(bl_max_setting)
         basic.append(blt_trx_setting)
-
-        append_label(basic, "=" * 6 + " Audio related settings "
-                     + "=" * 300, "=" * 300)
 
         if _mem.BUILD_OPTIONS.ENABLE_VOX:
             basic.append(vox_setting)
@@ -2293,8 +1650,6 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
             basic.append(voice_setting)
         if _mem.BUILD_OPTIONS.ENABLE_ALARM:
             basic.append(alarm_setting)
-
-        append_label(basic, "=" * 6 + " Radio state " + "=" * 300, "=" * 300)
 
         basic.append(freq0_setting)
         basic.append(freq1_setting)
@@ -2338,99 +1693,3 @@ class UVK5RadioEgzumer(chirp_common.CloneModeRadio):
         unlock.append(en_scrambler_setting)
 
         return top
-
-    def set_memory(self, memory):
-        """
-        Store details about a high-level memory to the memory map
-        This is called when a user edits a memory in the UI
-        """
-        number = memory.number-1
-        att_num = number if number < 200 else 200 + int((number - 200) / 2)
-
-        # Get a low-level memory object mapped to the image
-        _mem_chan = self._memobj.channel[number]
-        _mem_attr = self._memobj.ch_attr[att_num]
-
-        _mem_attr.is_scanlist1 = 0
-        _mem_attr.is_scanlist2 = 0
-        _mem_attr.compander = 0
-        _mem_attr.is_free = 1
-        _mem_attr.band = 0x7
-
-        # empty memory
-        if memory.empty:
-            _mem_chan.set_raw("\xFF" * 16)
-            if number < 200:
-                _mem_chname = self._memobj.channelname[number]
-                _mem_chname.set_raw("\xFF" * 16)
-            return memory
-
-        # find band
-        band = self._find_band(memory.freq)
-
-        # mode
-        tmp_mode = self.get_features().valid_modes.index(memory.mode)
-        _mem_chan.modulation = tmp_mode / 2
-        _mem_chan.bandwidth = tmp_mode % 2
-        if memory.mode == "USB":
-            _mem_chan.bandwidth = 1  # narrow
-
-        # frequency/offset
-        _mem_chan.freq = memory.freq/10
-        _mem_chan.offset = memory.offset/10
-
-        if memory.duplex == "":
-            _mem_chan.offset = 0
-            _mem_chan.offsetDir = 0
-        elif memory.duplex == '-':
-            _mem_chan.offsetDir = FLAGS1_OFFSET_MINUS
-        elif memory.duplex == '+':
-            _mem_chan.offsetDir = FLAGS1_OFFSET_PLUS
-        elif memory.duplex == 'off':
-            # we fake tx disable by setting the tx freq to 0 MHz
-            _mem_chan.offsetDir = FLAGS1_OFFSET_MINUS
-            _mem_chan.offset = _mem_chan.freq
-        # set band
-
-        _mem_attr.is_free = 0
-        _mem_attr.band = band
-
-        # channels >200 are the 14 VFO chanells and don't have names
-        if number < 200:
-            _mem_chname = self._memobj.channelname[number]
-            tag = memory.name.ljust(10) + "\x00"*6
-            _mem_chname.name = tag  # Store the alpha tag
-
-        # tone data
-        self._set_tone(memory, _mem_chan)
-
-        # step
-        _mem_chan.step = STEPS.index(memory.tuning_step)
-
-        # tx power
-        if str(memory.power) == str(UVK5_POWER_LEVELS[2]):
-            _mem_chan.txpower = POWER_HIGH
-        elif str(memory.power) == str(UVK5_POWER_LEVELS[1]):
-            _mem_chan.txpower = POWER_MEDIUM
-        else:
-            _mem_chan.txpower = POWER_LOW
-
-        # -------- EXTRA SETTINGS
-
-        def get_setting(name, def_val):
-            if name in memory.extra:
-                return int(memory.extra[name].value)
-            return def_val
-
-        _mem_chan.busyChLockout = get_setting("busyChLockout", False)
-        _mem_chan.dtmf_pttid = get_setting("pttid", 0)
-        _mem_chan.freq_reverse = get_setting("frev", False)
-        _mem_chan.dtmf_decode = get_setting("dtmfdecode", False)
-        _mem_chan.scrambler = get_setting("scrambler", 0)
-        _mem_attr.compander = get_setting("compander", 0)
-        if number < 200:
-            tmp_val = get_setting("scanlists", 0)
-            _mem_attr.is_scanlist1 = bool(tmp_val & 1)
-            _mem_attr.is_scanlist2 = bool(tmp_val & 2)
-
-        return memory
