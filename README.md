@@ -51,3 +51,4 @@ Calibration settings are raw values read from the EEPROM, not recalculated to dB
 - Microphone sensitivity - not used at all
 - RSSI levels - only used for small RSSI bar indicator if the firmware is built with the custom S-meter disabled (ENABLE_RSSI_BAR = 0)
 - TX power - if built with ENABLE_REDUCE_LOW_MID_TX_POWER then medium power is further divided by 3, low power is divided by 5 (not enabled by default)
+- Battery - only level 3 is used
