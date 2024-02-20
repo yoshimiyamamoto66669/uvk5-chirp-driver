@@ -611,8 +611,8 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
 
             # VOX
             elif elname == "vox":
-                voxvalue = element.value
-                _mem.vox_switch = int(voxvalue) > 0
+                voxvalue = int(element.value)
+                _mem.vox_switch = voxvalue > 0
                 _mem.vox_level = (voxvalue - 1) if _mem.vox_switch else 0
 
             # mic gain
@@ -885,10 +885,10 @@ class UVK5RadioEgzumer(uvk5.UVK5RadioBase):
             elif elname == "keyM_longpress_action":
                 _mem.keyM_longpress_action = \
                     KEYACTIONS_LIST.index(element.value)
-                
+
             elif elname == "upload_calibration":
                 self._upload_calibration = bool(element.value)
-                
+
             elif element.changed() and elname.startswith("cal."):
                 _mem.get_path(elname).set_value(element.value)
 
